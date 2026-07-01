@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>Goodwin Cup - админка</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Goodwin Cup">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>
+            <span class="brand-kicker">Goodwin Cup</span>
+            <span class="brand-title">Админка</span>
+          </span>
+        </a>
+        <div class="topbar-actions">
+          <span id="save-status" class="status-pill">Загрузка</span>
+          <a class="ghost-button" href="/">Таблица</a>
+        </div>
+      </header>
+
+      <main class="admin-layout">
+        <section class="admin-section" aria-labelledby="players-title">
+          <div class="section-heading">
+            <h1 id="players-title">Никнеймы</h1>
+            <span id="players-count" class="muted-label"></span>
+          </div>
+
+          <form id="player-form" class="inline-form" autocomplete="off">
+            <label class="field">
+              <span>Никнейм</span>
+              <input id="player-name" name="player-name" type="text" maxlength="32" required>
+            </label>
+            <button class="solid-button" type="submit">Добавить</button>
+          </form>
+
+          <div id="players-list" class="rows-list"></div>
+        </section>
+
+        <section class="admin-section" aria-labelledby="games-title">
+          <div class="section-heading">
+            <h1 id="games-title">Игры</h1>
+            <span id="games-count" class="muted-label"></span>
+          </div>
+
+          <form id="game-form" class="game-form" autocomplete="off">
+            <label class="field">
+              <span>Название</span>
+              <input id="game-title" name="game-title" type="text" maxlength="32" required>
+            </label>
+            <label class="field color-field">
+              <span>Цвет</span>
+              <input id="game-color" name="game-color" type="color" value="#d7083a">
+            </label>
+            <label class="field">
+              <span>URL иконки</span>
+              <input id="game-icon-url" name="game-icon-url" type="url" inputmode="url">
+            </label>
+            <label class="field">
+              <span>Файл иконки</span>
+              <input id="game-icon-file" name="game-icon-file" type="file" accept="image/*">
+            </label>
+            <button class="solid-button" type="submit">Добавить</button>
+          </form>
+
+          <div id="games-list" class="rows-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/assets/admin.js"></script>
+  </body>
+</html>

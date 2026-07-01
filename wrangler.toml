@@ -1,0 +1,8 @@
+name = "goodwin-cup"
+compatibility_date = "2026-07-01"
+pages_build_output_dir = "."
+
+# For shared data on Cloudflare Pages, create a KV namespace and bind it as GOODWIN_CUP_KV.
+# [[kv_namespaces]]
+# binding = "GOODWIN_CUP_KV"
+# id = "replace-with-kv-namespace-id"

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>Goodwin Cup - турнирная таблица</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Goodwin Cup">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>
+            <span class="brand-kicker">Goodwin Cup</span>
+            <span class="brand-title">Турнирная таблица</span>
+          </span>
+        </a>
+        <div class="topbar-actions">
+          <span id="save-status" class="status-pill">Загрузка</span>
+          <button id="refresh-button" class="ghost-button" type="button">Обновить</button>
+          <a class="solid-button" href="/admin/">Админка</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="scoreboard-surface" aria-labelledby="scoreboard-title">
+          <div class="section-heading">
+            <h1 id="scoreboard-title">Очки по играм</h1>
+            <span id="storage-mode" class="muted-label"></span>
+          </div>
+          <div id="table-root"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/assets/main.js"></script>
+  </body>
+</html>
