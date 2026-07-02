@@ -19,7 +19,9 @@
   --radius: 14px;
   --radius-lg: 24px;
   --score-cell-size: clamp(72px, 7.8vw, 104px);
-  --player-label-width: clamp(118px, 16vw, 192px);
+  --total-cell-width: clamp(92px, 9vw, 132px);
+  --player-label-width: clamp(160px, 20vw, 260px);
+  --text-outline: rgba(0, 0, 0, .82);
   font-family: "GothamPro", "Arial Black", Arial, sans-serif;
 }
 
@@ -41,7 +43,11 @@ body {
   background: var(--bg);
   isolation: isolate;
   overflow-x: hidden;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, .58);
+  -webkit-text-stroke: 1px var(--text-outline);
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, .64),
+    0 5px 14px rgba(0, 0, 0, .74);
+  text-stroke: 1px var(--text-outline);
 }
 
 body::before,
@@ -350,8 +356,8 @@ h1 {
   border-bottom: 3px solid var(--line);
   background: rgba(255, 255, 255, .035);
   color: var(--text);
-  font-size: clamp(14px, 1.8vw, 20px);
-  line-height: 1.15;
+  font-size: clamp(24px, 3vw, 42px);
+  line-height: 1.02;
   overflow-wrap: anywhere;
 }
 
@@ -367,7 +373,7 @@ h1 {
 .score-grid {
   display: grid;
   grid-auto-rows: var(--score-cell-size);
-  grid-template-columns: repeat(var(--table-column-count), var(--score-cell-size));
+  grid-template-columns: repeat(var(--game-count), var(--score-cell-size)) var(--total-cell-width);
   background: #050607;
 }
 
@@ -400,6 +406,7 @@ h1 {
 }
 
 .total-cell {
+  width: var(--total-cell-width);
   border-right: 0;
   color: #fff;
   background: rgba(255, 255, 255, .075);
@@ -617,7 +624,8 @@ h1 {
 @media (max-width: 980px) {
   :root {
     --score-cell-size: 78px;
-    --player-label-width: 132px;
+    --total-cell-width: 104px;
+    --player-label-width: 180px;
   }
 
   .app-shell {
@@ -656,7 +664,8 @@ h1 {
 @media (max-width: 640px) {
   :root {
     --score-cell-size: 68px;
-    --player-label-width: 112px;
+    --total-cell-width: 94px;
+    --player-label-width: 150px;
   }
 
   .app-shell {

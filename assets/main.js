@@ -123,7 +123,6 @@ function renderBoard() {
   board.className = "scoreboard-grid";
   board.style.setProperty("--game-count", state.games.length);
   board.style.setProperty("--player-count", state.players.length);
-  board.style.setProperty("--table-column-count", state.games.length + 1);
 
   const gamesStrip = document.createElement("div");
   gamesStrip.className = "games-strip";
