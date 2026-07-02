@@ -20,6 +20,8 @@
   --radius-lg: 24px;
   --grid-line-half: 1px;
   --grid-line-size: 2px;
+  --game-cell-alpha: .48;
+  --game-logo-cell-top-alpha: .05;
   --score-cell-size: clamp(72px, 7.8vw, 104px);
   --total-cell-width: clamp(92px, 9vw, 132px);
   --player-label-width: clamp(160px, 20vw, 260px);
@@ -275,17 +277,12 @@ h1 {
 .scoreboard-grid::after {
   position: absolute;
   z-index: 0;
-  right: -12%;
-  bottom: -28px;
-  left: -12%;
-  height: 132px;
-  background:
-    radial-gradient(ellipse 42% 70% at 50% 18%, rgba(255, 255, 255, .7) 0%, rgba(255, 255, 255, .3) 34%, rgba(255, 255, 255, 0) 74%),
-    radial-gradient(ellipse 54% 68% at 35% 8%, rgba(255, 255, 255, .28) 0%, rgba(255, 255, 255, .12) 42%, rgba(255, 255, 255, 0) 80%),
-    radial-gradient(ellipse 54% 68% at 65% 8%, rgba(255, 255, 255, .28) 0%, rgba(255, 255, 255, .12) 42%, rgba(255, 255, 255, 0) 80%);
-  filter: blur(30px);
-  -webkit-mask-image: radial-gradient(ellipse 62% 82% at 50% 20%, #000 0%, rgba(0, 0, 0, .72) 42%, transparent 90%);
-  mask-image: radial-gradient(ellipse 62% 82% at 50% 20%, #000 0%, rgba(0, 0, 0, .72) 42%, transparent 90%);
+  right: 6%;
+  bottom: 2px;
+  left: 6%;
+  height: 42px;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .16) 40%, rgba(255, 255, 255, 0) 76%);
+  filter: blur(16px);
   mix-blend-mode: screen;
   pointer-events: none;
   content: "";
@@ -313,7 +310,7 @@ h1 {
   padding: 10px;
   border: 0;
   border-radius: 0;
-  background: linear-gradient(to bottom, rgba(var(--game-rgb), .1), rgba(var(--game-rgb), 1));
+  background: linear-gradient(to bottom, rgba(var(--game-rgb), var(--game-logo-cell-top-alpha)), rgba(var(--game-rgb), var(--game-cell-alpha)));
   box-shadow: none;
 }
 
@@ -418,7 +415,7 @@ h1 {
   inset: 0;
   background: var(--game-color);
   content: "";
-  opacity: .72;
+  opacity: var(--game-cell-alpha);
 }
 
 .total-cell {
