@@ -274,7 +274,7 @@ h1 {
   isolation: isolate;
   width: max-content;
   margin: 0 auto;
-  padding-bottom: 52px;
+  padding-bottom: 64px;
 }
 
 .scoreboard-grid::after {
@@ -283,14 +283,12 @@ h1 {
   right: 0;
   bottom: 0;
   left: 0;
-  height: 54px;
+  height: 64px;
   background:
-    radial-gradient(ellipse 42% 88% at 50% 8%, rgba(255, 255, 255, .58) 0%, rgba(255, 255, 255, .24) 38%, rgba(255, 255, 255, .07) 66%, rgba(255, 255, 255, 0) 94%),
-    radial-gradient(ellipse 84% 82% at 50% 18%, rgba(255, 255, 255, .18) 0%, rgba(255, 255, 255, .08) 46%, rgba(255, 255, 255, 0) 91%);
-  filter: blur(8px);
-  -webkit-mask-image: radial-gradient(ellipse 56% 92% at 50% 16%, #000 0%, rgba(0, 0, 0, .78) 48%, transparent 96%);
-  mask-image: radial-gradient(ellipse 56% 92% at 50% 16%, #000 0%, rgba(0, 0, 0, .78) 48%, transparent 96%);
+    radial-gradient(ellipse 34% 62% at 50% 0%, rgba(255, 255, 255, .62) 0%, rgba(255, 255, 255, .32) 30%, rgba(255, 255, 255, .1) 55%, rgba(255, 255, 255, 0) 76%),
+    radial-gradient(ellipse 72% 78% at 50% 4%, rgba(255, 255, 255, .24) 0%, rgba(255, 255, 255, .09) 46%, rgba(255, 255, 255, 0) 78%);
   mix-blend-mode: screen;
+  opacity: .96;
   pointer-events: none;
   content: "";
 }
