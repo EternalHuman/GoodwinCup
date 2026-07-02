@@ -20,8 +20,10 @@
   --radius-lg: 24px;
   --grid-line-half: 1px;
   --grid-line-size: 2px;
-  --game-cell-alpha: .48;
-  --game-logo-cell-top-alpha: .05;
+  --game-cell-alpha: .64;
+  --game-logo-cell-top-alpha: 0;
+  --player-cell-alpha: .018;
+  --total-cell-alpha: .04;
   --score-cell-size: clamp(72px, 7.8vw, 104px);
   --total-cell-width: clamp(92px, 9vw, 132px);
   --player-label-width: clamp(160px, 20vw, 260px);
@@ -363,7 +365,7 @@ h1 {
   border: 0;
   border-right: var(--grid-line-size) solid var(--line);
   border-bottom: var(--grid-line-size) solid var(--line);
-  background: rgba(255, 255, 255, .035);
+  background: rgba(255, 255, 255, var(--player-cell-alpha));
   color: var(--text);
   font-size: clamp(24px, 3vw, 42px);
   line-height: 1.02;
@@ -422,7 +424,7 @@ h1 {
   width: var(--total-cell-width);
   border-right: 0;
   color: #fff;
-  background: rgba(255, 255, 255, .075);
+  background: rgba(255, 255, 255, var(--total-cell-alpha));
   font-size: clamp(33px, 4.5vw, 51px);
   font-weight: 700;
   text-align: center;
