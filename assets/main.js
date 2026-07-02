@@ -5,7 +5,7 @@ import {
   saveState
 } from "./store.js";
 
-const AUTO_REFRESH_INTERVAL = 2000;
+const AUTO_REFRESH_INTERVAL = 1000;
 
 const tableRoot = document.querySelector("#table-root");
 const saveStatus = document.querySelector("#save-status");
@@ -16,12 +16,14 @@ const saveButton = document.querySelector("#save-button");
 let state = null;
 let currentMode = "local";
 let stateSignature = "";
+let layoutSignature = "";
 let hasUnsavedChanges = false;
+const dirtyScoreKeys = new Set();
 
 init();
 
 async function init() {
-  await reloadState();
+  await reloadState({ forceRender: true });
 
   refreshButton.addEventListener("click", refreshState);
   saveButton.addEventListener("click", persistState);
@@ -31,14 +33,14 @@ async function init() {
 }
 
 async function reloadState(options = {}) {
-  const { silent = false } = options;
+  const { forceRender = false, silent = false } = options;
 
   if (!silent) {
     setStatus("Загрузка");
   }
 
   const result = await loadState();
-  applyLoadedState(result, { forceRender: true });
+  applyLoadedState(result, { forceRender });
 
   if (!silent) {
     setStatus(hasUnsavedChanges ? "Есть изменения" : "Готово");
@@ -46,17 +48,11 @@ async function reloadState(options = {}) {
 }
 
 async function refreshState() {
-  if (hasUnsavedChanges && !confirm("Обновить таблицу и сбросить несохраненные изменения?")) {
-    return;
-  }
-
-  hasUnsavedChanges = false;
-  updateSaveButton();
   await reloadState();
 }
 
 async function refreshVisibleBoard() {
-  if (hasUnsavedChanges || document.visibilityState !== "visible") {
+  if (document.visibilityState !== "visible") {
     return;
   }
 
@@ -65,7 +61,7 @@ async function refreshVisibleBoard() {
 }
 
 function handleStorageUpdate(event) {
-  if (event.key !== STORAGE_KEY || hasUnsavedChanges) {
+  if (event.key !== STORAGE_KEY) {
     return;
   }
 
@@ -83,15 +79,21 @@ function warnAboutUnsavedChanges(event) {
 
 function applyLoadedState(result, options = {}) {
   const { forceRender = false } = options;
-  const nextSignature = JSON.stringify(result.state);
-  const shouldRender = forceRender || nextSignature !== stateSignature;
+  const nextState = hasUnsavedChanges ? mergeDirtyScores(result.state) : result.state;
+  const nextSignature = JSON.stringify(nextState);
+  const nextLayoutSignature = getLayoutSignature(nextState);
+  const shouldRender = forceRender || !state || nextLayoutSignature !== layoutSignature;
+  const shouldUpdateScores = !shouldRender && nextSignature !== stateSignature;
 
-  state = result.state;
+  state = nextState;
   currentMode = result.mode;
   stateSignature = nextSignature;
+  layoutSignature = nextLayoutSignature;
 
   if (shouldRender) {
     renderBoard();
+  } else if (shouldUpdateScores) {
+    updateScoreInputs();
   }
 
   updateModeLabel();
@@ -195,11 +197,13 @@ function createScoreCell(player, game) {
   input.inputMode = "decimal";
   input.min = "0";
   input.value = formatScore(state.scores[player.id]?.[game.id]);
+  input.dataset.playerId = player.id;
+  input.dataset.gameId = game.id;
   input.setAttribute("aria-label", `${player.name}, ${game.title}`);
 
   input.addEventListener("input", () => {
     updateScore(player.id, game.id, input.value);
-    markDirty();
+    markDirty(player.id, game.id);
   });
 
   cell.append(input);
@@ -221,7 +225,8 @@ function updateScore(playerId, gameId, rawValue) {
   }
 }
 
-function markDirty() {
+function markDirty(playerId, gameId) {
+  dirtyScoreKeys.add(createScoreKey(playerId, gameId));
   hasUnsavedChanges = true;
   setStatus("Есть изменения");
   updateSaveButton();
@@ -235,10 +240,74 @@ async function persistState() {
   setStatus("Сохранение");
   saveButton.disabled = true;
 
-  const result = await saveState(state);
+  const latest = await loadState();
+  const stateToSave = hasUnsavedChanges ? mergeDirtyScores(latest.state) : state;
+  const result = await saveState(stateToSave);
+  dirtyScoreKeys.clear();
   hasUnsavedChanges = false;
   applyLoadedState(result, { forceRender: true });
   setStatus(statusReadyText());
+}
+
+function updateScoreInputs() {
+  for (const input of tableRoot.querySelectorAll(".score-input")) {
+    const { playerId, gameId } = input.dataset;
+
+    if (!playerId || !gameId || dirtyScoreKeys.has(createScoreKey(playerId, gameId))) {
+      continue;
+    }
+
+    input.value = formatScore(state.scores[playerId]?.[gameId]);
+  }
+}
+
+function mergeDirtyScores(nextState) {
+  if (!state || !dirtyScoreKeys.size) {
+    return nextState;
+  }
+
+  const playerIds = new Set(nextState.players.map((player) => player.id));
+  const gameIds = new Set(nextState.games.map((game) => game.id));
+
+  for (const key of [...dirtyScoreKeys]) {
+    const { playerId, gameId } = parseScoreKey(key);
+
+    if (!playerIds.has(playerId) || !gameIds.has(gameId)) {
+      dirtyScoreKeys.delete(key);
+      continue;
+    }
+
+    nextState.scores[playerId] ||= {};
+
+    if (Object.prototype.hasOwnProperty.call(state.scores[playerId] || {}, gameId)) {
+      nextState.scores[playerId][gameId] = state.scores[playerId][gameId];
+    } else {
+      delete nextState.scores[playerId][gameId];
+    }
+  }
+
+  hasUnsavedChanges = dirtyScoreKeys.size > 0;
+  return nextState;
+}
+
+function getLayoutSignature(nextState) {
+  return JSON.stringify({
+    players: nextState.players,
+    games: nextState.games
+  });
+}
+
+function createScoreKey(playerId, gameId) {
+  return `${playerId}:${gameId}`;
+}
+
+function parseScoreKey(key) {
+  const separatorIndex = key.indexOf(":");
+
+  return {
+    playerId: key.slice(0, separatorIndex),
+    gameId: key.slice(separatorIndex + 1)
+  };
 }
 
 function updateModeLabel() {

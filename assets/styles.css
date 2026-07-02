@@ -33,15 +33,40 @@ html {
 }
 
 body {
+  position: relative;
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
   color: var(--text);
-  background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, .025) 0 1px, transparent 1px 8px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, .02) 0 1px, transparent 1px 8px),
-    #070809;
+  background: var(--bg);
+  isolation: isolate;
+  overflow-x: hidden;
   text-shadow: 0 2px 6px rgba(0, 0, 0, .58);
+}
+
+body::before,
+body::after {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+}
+
+body::before {
+  z-index: 0;
+  inset: -48px;
+  background: url("/assets/ff9235cd827885e439aef1bb9e153754.jpg") center / cover no-repeat;
+  filter: blur(34px);
+  opacity: .82;
+  transform: scale(1.08);
+}
+
+body::after {
+  z-index: 1;
+  background:
+    linear-gradient(rgba(7, 8, 9, .72), rgba(7, 8, 9, .82)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .025) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, .02) 0 1px, transparent 1px 8px);
 }
 
 button,
@@ -62,6 +87,8 @@ button:disabled {
 }
 
 .app-shell {
+  position: relative;
+  z-index: 2;
   width: min(1440px, 100%);
   margin: 0 auto;
   padding: 28px;
