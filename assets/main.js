@@ -167,6 +167,7 @@ function renderBoard() {
 function createGameCard(game) {
   const card = document.createElement("div");
   card.className = "game-card";
+  card.classList.toggle("has-title", game.showTitle === true);
   card.style.setProperty("--game-color", game.color);
   card.style.setProperty("--game-rgb", hexToRgb(game.color));
   card.title = game.title;
@@ -177,6 +178,14 @@ function createGameCard(game) {
   icon.alt = game.title;
 
   card.append(icon);
+
+  if (game.showTitle === true) {
+    const title = document.createElement("span");
+    title.className = "game-title";
+    title.textContent = game.title;
+    card.append(title);
+  }
+
   return card;
 }
 

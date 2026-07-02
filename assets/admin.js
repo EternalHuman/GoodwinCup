@@ -20,6 +20,7 @@ const gameTitle = document.querySelector("#game-title");
 const gameColor = document.querySelector("#game-color");
 const gameIconUrl = document.querySelector("#game-icon-url");
 const gameIconFile = document.querySelector("#game-icon-file");
+const gameShowTitle = document.querySelector("#game-show-title");
 const gamesList = document.querySelector("#games-list");
 
 let state = null;
@@ -181,6 +182,23 @@ function renderGames() {
       markDirty();
     });
 
+    const showTitleLabel = document.createElement("label");
+    showTitleLabel.className = "row-checkbox";
+
+    const showTitleInput = document.createElement("input");
+    showTitleInput.type = "checkbox";
+    showTitleInput.checked = game.showTitle === true;
+    showTitleInput.setAttribute("aria-label", "Отображать название игры");
+    showTitleInput.addEventListener("change", () => {
+      game.showTitle = showTitleInput.checked;
+      markDirty();
+    });
+
+    const showTitleText = document.createElement("span");
+    showTitleText.textContent = "Название";
+
+    showTitleLabel.append(showTitleInput, showTitleText);
+
     const copyButton = document.createElement("button");
     copyButton.className = "ghost-button compact-action";
     copyButton.type = "button";
@@ -193,7 +211,7 @@ function renderGames() {
     removeButton.textContent = "Удалить";
     removeButton.addEventListener("click", () => removeGame(game.id));
 
-    row.append(orderActions, preview, titleInput, colorInput, fileInput, copyButton, removeButton);
+    row.append(orderActions, preview, titleInput, colorInput, fileInput, showTitleLabel, copyButton, removeButton);
     gamesList.append(row);
   });
 }
@@ -262,7 +280,8 @@ async function addGame(event) {
     id: createId("game"),
     title,
     color,
-    icon: icon || makeDefaultIcon(title.slice(0, 3), color)
+    icon: icon || makeDefaultIcon(title.slice(0, 3), color),
+    showTitle: gameShowTitle.checked
   });
 
   gameForm.reset();

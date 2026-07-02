@@ -1,6 +1,6 @@
 @font-face {
   font-family: "GothamPro";
-  src: url("/assets/gothampro_bold.ttf") format("truetype");
+  src: url("/assets/gothampro_black.ttf") format("truetype");
   font-display: swap;
   font-style: normal;
   font-weight: 700;
@@ -22,8 +22,8 @@
   --grid-line-size: 2px;
   --game-cell-alpha: .64;
   --game-logo-cell-top-alpha: 0;
-  --player-cell-alpha: .006;
-  --total-cell-alpha: .016;
+  --player-cell-alpha: .002;
+  --total-cell-alpha: .006;
   --score-cell-size: clamp(72px, 7.8vw, 104px);
   --total-cell-width: clamp(92px, 9vw, 132px);
   --player-label-width: clamp(160px, 20vw, 260px);
@@ -316,6 +316,13 @@ h1 {
   box-shadow: none;
 }
 
+.game-card.has-title {
+  align-content: center;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+}
+
 .game-card:first-child {
   border-top-left-radius: 0;
 }
@@ -331,6 +338,24 @@ h1 {
   object-fit: contain;
   background: transparent;
   box-shadow: none;
+}
+
+.game-card.has-title .game-icon {
+  width: min(62px, calc(var(--score-cell-size) - 22px));
+  height: min(62px, calc(var(--score-cell-size) - 22px));
+  transform: translateY(-3px);
+}
+
+.game-title {
+  max-width: 100%;
+  overflow: hidden;
+  color: #fff;
+  font-size: clamp(8px, 1vw, 12px);
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-shadow: var(--table-text-shadow);
+  white-space: nowrap;
 }
 
 .scoreboard-body {
@@ -509,7 +534,7 @@ h1 {
 }
 
 .game-form {
-  grid-template-columns: minmax(140px, 1.2fr) 92px minmax(140px, 1fr) minmax(140px, 1fr) auto;
+  grid-template-columns: minmax(140px, 1.2fr) 92px minmax(140px, 1fr) minmax(140px, 1fr) minmax(130px, .75fr) auto;
   align-items: end;
 }
 
@@ -556,6 +581,22 @@ h1 {
   padding: 9px 10px;
 }
 
+.checkbox-field {
+  align-self: stretch;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .04);
+}
+
+.checkbox-field input {
+  width: 18px;
+  min-height: 18px;
+  padding: 0;
+}
+
 .field input:focus,
 .row-input:focus {
   border-color: rgba(246, 192, 68, .8);
@@ -596,7 +637,7 @@ h1 {
 }
 
 .game-row {
-  grid-template-columns: auto 52px minmax(120px, 1fr) 54px minmax(120px, .85fr) auto auto;
+  grid-template-columns: auto 52px minmax(120px, 1fr) 54px minmax(120px, .85fr) minmax(112px, .55fr) auto auto;
 }
 
 .row-actions {
@@ -607,6 +648,21 @@ h1 {
 
 .order-actions {
   justify-content: flex-start;
+}
+
+.row-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.row-checkbox input {
+  width: 18px;
+  height: 18px;
 }
 
 .row-input {

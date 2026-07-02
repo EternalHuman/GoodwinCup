@@ -28,31 +28,36 @@ const DEFAULT_STATE = {
       id: "game-1",
       title: "CS2",
       color: DEFAULT_COLORS[0],
-      icon: makeDefaultIcon("CS", DEFAULT_COLORS[0])
+      icon: makeDefaultIcon("CS", DEFAULT_COLORS[0]),
+      showTitle: false
     },
     {
       id: "game-2",
       title: "Dota",
       color: DEFAULT_COLORS[1],
-      icon: makeDefaultIcon("D2", DEFAULT_COLORS[1])
+      icon: makeDefaultIcon("D2", DEFAULT_COLORS[1]),
+      showTitle: false
     },
     {
       id: "game-3",
       title: "Race",
       color: DEFAULT_COLORS[2],
-      icon: makeDefaultIcon("RC", DEFAULT_COLORS[2])
+      icon: makeDefaultIcon("RC", DEFAULT_COLORS[2]),
+      showTitle: false
     },
     {
       id: "game-4",
       title: "FIFA",
       color: DEFAULT_COLORS[3],
-      icon: makeDefaultIcon("FC", DEFAULT_COLORS[3])
+      icon: makeDefaultIcon("FC", DEFAULT_COLORS[3]),
+      showTitle: false
     },
     {
       id: "game-5",
       title: "MK",
       color: DEFAULT_COLORS[4],
-      icon: makeDefaultIcon("MK", DEFAULT_COLORS[4])
+      icon: makeDefaultIcon("MK", DEFAULT_COLORS[4]),
+      showTitle: false
     }
   ],
   scores: {}
@@ -206,7 +211,8 @@ function normalizeGames(games) {
             id: cleanId(game?.id, `game-${index + 1}`),
             title: cleanText(game?.title, 32) || `Игра ${index + 1}`,
             color,
-            icon: cleanIcon(game?.icon) || makeDefaultIcon(String(index + 1), color)
+            icon: cleanIcon(game?.icon) || makeDefaultIcon(String(index + 1), color),
+            showTitle: game?.showTitle === true
           };
         })
         .filter((game) => {
