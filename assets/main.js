@@ -7,6 +7,7 @@ import {
 } from "./store.js";
 
 const AUTO_REFRESH_INTERVAL = 1000;
+const STATUS_HIDE_DELAY = 4000;
 
 const tableRoot = document.querySelector("#table-root");
 const saveStatus = document.querySelector("#save-status");
@@ -19,6 +20,7 @@ let currentMode = "local";
 let stateSignature = "";
 let layoutSignature = "";
 let hasUnsavedChanges = false;
+let statusHideTimer = 0;
 const dirtyScoreKeys = new Set();
 
 init();
@@ -34,22 +36,30 @@ async function init() {
 }
 
 async function reloadState(options = {}) {
-  const { forceRender = false, silent = false } = options;
+  const { forceRender = false, silent = false, completeMessage = "Готово" } = options;
 
   if (!silent) {
-    setStatus("Загрузка");
+    setStatus("Загрузка", "info", { autoHide: false });
   }
 
-  const result = await loadState();
-  applyLoadedState(result, { forceRender });
+  try {
+    const result = await loadState();
+    applyLoadedState(result, { forceRender });
 
-  if (!silent) {
-    setStatus(hasUnsavedChanges ? "Есть изменения" : "Готово");
+    if (!silent) {
+      setStatus(hasUnsavedChanges ? "Есть несохранённые изменения" : completeMessage, hasUnsavedChanges ? "warning" : "success");
+    }
+  } catch (error) {
+    console.error("Could not load tournament state.", error);
+
+    if (!silent) {
+      setStatus("Ошибка загрузки", "error");
+    }
   }
 }
 
 async function refreshState() {
-  await reloadState();
+  await reloadState({ completeMessage: "Обновлено" });
 }
 
 async function refreshVisibleBoard() {
@@ -274,7 +284,6 @@ function updateScore(playerId, gameId, rawValue) {
 function markDirty(playerId, gameId) {
   dirtyScoreKeys.add(createScoreKey(playerId, gameId));
   hasUnsavedChanges = true;
-  setStatus("Есть изменения");
   updateSaveButton();
 }
 
@@ -283,16 +292,22 @@ async function persistState() {
     return;
   }
 
-  setStatus("Сохранение");
+  setStatus("Сохранение", "info", { autoHide: false });
   saveButton.disabled = true;
 
-  const latest = await loadState();
-  const stateToSave = hasUnsavedChanges ? mergeDirtyScores(latest.state) : state;
-  const result = await saveState(stateToSave);
-  dirtyScoreKeys.clear();
-  hasUnsavedChanges = false;
-  applyLoadedState(result, { forceRender: true });
-  setStatus(statusReadyText());
+  try {
+    const latest = await loadState();
+    const stateToSave = hasUnsavedChanges ? mergeDirtyScores(latest.state) : state;
+    const result = await saveState(stateToSave);
+    dirtyScoreKeys.clear();
+    hasUnsavedChanges = false;
+    applyLoadedState(result, { forceRender: true });
+    setStatus(statusReadyText(), currentMode === "cloud" ? "success" : "warning");
+  } catch (error) {
+    console.error("Could not save tournament state.", error);
+    setStatus("Ошибка сохранения", "error");
+    updateSaveButton();
+  }
 }
 
 function updateScoreInputs() {
@@ -380,12 +395,25 @@ function updateModeLabel() {
 
 function updateSaveButton() {
   saveButton.disabled = !hasUnsavedChanges;
+  saveButton.classList.toggle("has-unsaved", hasUnsavedChanges);
 }
 
 function statusReadyText() {
-  return currentMode === "cloud" ? "Сохранено" : "Локально";
+  return currentMode === "cloud" ? "Сохранено" : "Сохранено локально";
 }
 
-function setStatus(text) {
+function setStatus(text, type = "info", options = {}) {
+  const { autoHide = true } = options;
+
+  window.clearTimeout(statusHideTimer);
   saveStatus.textContent = text;
+  saveStatus.className = `status-toast status-${type} is-visible`;
+
+  if (autoHide) {
+    statusHideTimer = window.setTimeout(hideStatus, STATUS_HIDE_DELAY);
+  }
+}
+
+function hideStatus() {
+  saveStatus.classList.remove("is-visible");
 }

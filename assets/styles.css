@@ -173,20 +173,56 @@ button:disabled {
   gap: 10px;
 }
 
-.status-pill,
 .muted-label {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
 }
 
-.status-pill {
-  min-width: 112px;
-  padding: 9px 12px;
-  border: 1px solid var(--line-soft);
+.status-toast {
+  position: fixed;
+  z-index: 20;
+  top: 22px;
+  left: 50%;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 12px 18px;
+  border: 1px solid rgba(255, 255, 255, .24);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, .04);
+  color: #fff;
+  background: rgba(8, 10, 12, .88);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, .42);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
   text-align: center;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, .65);
+  transform: translate(-50%, -12px);
+  transition: opacity .22s ease, transform .22s ease, border-color .22s ease, background .22s ease;
+}
+
+.status-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.status-toast.status-success {
+  border-color: rgba(76, 236, 132, .66);
+  background: rgba(10, 55, 28, .92);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, .42), 0 0 30px rgba(76, 236, 132, .24);
+}
+
+.status-toast.status-warning {
+  border-color: rgba(246, 192, 68, .72);
+  background: rgba(70, 49, 10, .92);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, .42), 0 0 30px rgba(246, 192, 68, .22);
+}
+
+.status-toast.status-error {
+  border-color: rgba(255, 77, 104, .72);
+  background: rgba(72, 14, 25, .94);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, .42), 0 0 30px rgba(255, 77, 104, .24);
 }
 
 .solid-button,
@@ -199,7 +235,7 @@ button:disabled {
   cursor: pointer;
   font-weight: 700;
   line-height: 1;
-  transition: transform .16s ease, border-color .16s ease, background .16s ease, opacity .16s ease;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease, opacity .16s ease;
 }
 
 .solid-button,
@@ -213,6 +249,34 @@ button:disabled {
   color: #141006;
   background: var(--accent);
   text-shadow: 0 1px 1px rgba(255, 255, 255, .24);
+}
+
+.solid-button.has-unsaved {
+  border-color: rgba(85, 255, 135, .96);
+  color: #031107;
+  background: #49f071;
+  box-shadow:
+    0 0 0 1px rgba(85, 255, 135, .34),
+    0 0 18px rgba(85, 255, 135, .74),
+    0 0 42px rgba(85, 255, 135, .34);
+  animation: save-button-pulse 1s ease-in-out infinite;
+}
+
+@keyframes save-button-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(85, 255, 135, .28),
+      0 0 14px rgba(85, 255, 135, .55),
+      0 0 34px rgba(85, 255, 135, .24);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(85, 255, 135, .48),
+      0 0 26px rgba(85, 255, 135, .9),
+      0 0 62px rgba(85, 255, 135, .46);
+  }
 }
 
 .ghost-button {

@@ -8,6 +8,8 @@ import {
   saveState
 } from "./store.js";
 
+const STATUS_HIDE_DELAY = 4000;
+
 const saveStatus = document.querySelector("#save-status");
 const saveButton = document.querySelector("#save-button");
 const playersCount = document.querySelector("#players-count");
@@ -28,6 +30,7 @@ const gamesList = document.querySelector("#games-list");
 let state = null;
 let currentMode = "local";
 let hasUnsavedChanges = false;
+let statusHideTimer = 0;
 
 init();
 
@@ -45,16 +48,26 @@ async function reloadState(options = {}) {
   const { silent = false } = options;
 
   if (!silent) {
-    setStatus("Загрузка");
+    setStatus("Загрузка", "info", { autoHide: false });
   }
 
-  const result = await loadState();
-  state = result.state;
-  currentMode = result.mode;
-  hasUnsavedChanges = false;
-  renderAdmin();
-  setStatus(statusReadyText());
-  updateSaveButton();
+  try {
+    const result = await loadState();
+    state = result.state;
+    currentMode = result.mode;
+    hasUnsavedChanges = false;
+    renderAdmin();
+    if (!silent) {
+      setStatus(statusReadyText(), currentMode === "cloud" ? "success" : "warning");
+    }
+    updateSaveButton();
+  } catch (error) {
+    console.error("Could not load tournament state.", error);
+
+    if (!silent) {
+      setStatus("Ошибка загрузки", "error");
+    }
+  }
 }
 
 function handleStorageUpdate(event) {
@@ -415,7 +428,6 @@ function clampOffset(value) {
 
 function markDirty() {
   hasUnsavedChanges = true;
-  setStatus("Есть изменения");
   updateSaveButton();
 }
 
@@ -424,16 +436,22 @@ async function persistState() {
     return;
   }
 
-  setStatus("Сохранение");
+  setStatus("Сохранение", "info", { autoHide: false });
   saveButton.disabled = true;
 
-  const result = await saveState(state);
-  state = result.state;
-  currentMode = result.mode;
-  hasUnsavedChanges = false;
-  renderAdmin();
-  setStatus(statusReadyText());
-  updateSaveButton();
+  try {
+    const result = await saveState(state);
+    state = result.state;
+    currentMode = result.mode;
+    hasUnsavedChanges = false;
+    renderAdmin();
+    setStatus(statusReadyText(), currentMode === "cloud" ? "success" : "warning");
+    updateSaveButton();
+  } catch (error) {
+    console.error("Could not save tournament state.", error);
+    setStatus("Ошибка сохранения", "error");
+    updateSaveButton();
+  }
 }
 
 function checkIconSize(file) {
@@ -443,18 +461,31 @@ function checkIconSize(file) {
     return true;
   }
 
-  alert("Иконка должна быть меньше 750 КБ.");
+  setStatus("Иконка должна быть меньше 750 КБ", "error");
   return false;
 }
 
 function updateSaveButton() {
   saveButton.disabled = !hasUnsavedChanges;
+  saveButton.classList.toggle("has-unsaved", hasUnsavedChanges);
 }
 
 function statusReadyText() {
-  return currentMode === "cloud" ? "Сохранено" : "Локально";
+  return currentMode === "cloud" ? "Сохранено" : "Сохранено локально";
 }
 
-function setStatus(text) {
+function setStatus(text, type = "info", options = {}) {
+  const { autoHide = true } = options;
+
+  window.clearTimeout(statusHideTimer);
   saveStatus.textContent = text;
+  saveStatus.className = `status-toast status-${type} is-visible`;
+
+  if (autoHide) {
+    statusHideTimer = window.setTimeout(hideStatus, STATUS_HIDE_DELAY);
+  }
+}
+
+function hideStatus() {
+  saveStatus.classList.remove("is-visible");
 }
