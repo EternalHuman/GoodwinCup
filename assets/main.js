@@ -168,17 +168,14 @@ function createGameCard(game) {
   const card = document.createElement("div");
   card.className = "game-card";
   card.style.setProperty("--game-color", game.color);
+  card.title = game.title;
 
   const icon = document.createElement("img");
   icon.className = "game-icon";
   icon.src = game.icon;
   icon.alt = game.title;
 
-  const title = document.createElement("span");
-  title.className = "game-title";
-  title.textContent = game.title;
-
-  card.append(icon, title);
+  card.append(icon);
   return card;
 }
 
