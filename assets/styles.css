@@ -22,6 +22,7 @@
   --total-cell-width: clamp(92px, 9vw, 132px);
   --player-label-width: clamp(160px, 20vw, 260px);
   --table-text-shadow: 4px 5px 0 rgba(0, 0, 0, .7), 7px 9px 18px rgba(0, 0, 0, .76);
+  --number-text-shadow: 3px 4px 0 rgba(0, 0, 0, .62), 4px 5px 9px rgba(0, 0, 0, .58);
   --text-outline: rgba(0, 0, 0, .82);
   font-family: "GothamPro", "Arial Black", Arial, sans-serif;
 }
@@ -44,11 +45,9 @@ body {
   background: var(--bg);
   isolation: isolate;
   overflow-x: hidden;
-  -webkit-text-stroke: 1px var(--text-outline);
   text-shadow:
     0 2px 0 rgba(0, 0, 0, .64),
     0 5px 14px rgba(0, 0, 0, .74);
-  text-stroke: 1px var(--text-outline);
 }
 
 body::before,
@@ -305,17 +304,17 @@ h1 {
   min-height: 0;
   padding: 10px;
   border: 0;
-  border-radius: var(--radius) var(--radius) 6px 6px;
-  background: linear-gradient(to bottom, rgba(var(--game-rgb), .3), rgba(var(--game-rgb), 1));
+  border-radius: 0;
+  background: linear-gradient(to bottom, rgba(var(--game-rgb), .1), rgba(var(--game-rgb), 1));
   box-shadow: none;
 }
 
 .game-card:first-child {
-  border-top-left-radius: var(--radius-lg);
+  border-top-left-radius: 0;
 }
 
 .game-card:last-child {
-  border-top-right-radius: var(--radius-lg);
+  border-top-right-radius: 0;
 }
 
 .game-icon {
@@ -365,7 +364,9 @@ h1 {
   line-height: 1.02;
   overflow-wrap: anywhere;
   text-align: center;
+  -webkit-text-stroke: 1px var(--text-outline);
   text-shadow: var(--table-text-shadow);
+  text-stroke: 1px var(--text-outline);
 }
 
 .player-label:first-child {
@@ -420,7 +421,9 @@ h1 {
   font-size: clamp(33px, 4.5vw, 51px);
   font-weight: 700;
   text-align: center;
-  text-shadow: var(--table-text-shadow);
+  -webkit-text-stroke: 1px var(--text-outline);
+  text-shadow: var(--number-text-shadow);
+  text-stroke: 1px var(--text-outline);
 }
 
 .player-label.is-last-row,
@@ -443,7 +446,9 @@ h1 {
   font-size: clamp(33px, 4.5vw, 51px);
   font-weight: 700;
   text-align: center;
-  text-shadow: var(--table-text-shadow);
+  -webkit-text-stroke: 1px var(--text-outline);
+  text-shadow: var(--number-text-shadow);
+  text-stroke: 1px var(--text-outline);
   outline: 2px solid transparent;
 }
 
