@@ -18,6 +18,8 @@
   --accent: #f6c044;
   --radius: 14px;
   --radius-lg: 24px;
+  --grid-line-half: 1px;
+  --grid-line-size: 2px;
   --score-cell-size: clamp(72px, 7.8vw, 104px);
   --total-cell-width: clamp(92px, 9vw, 132px);
   --player-label-width: clamp(160px, 20vw, 260px);
@@ -277,8 +279,9 @@ h1 {
   bottom: 2px;
   left: 6%;
   height: 42px;
-  background: radial-gradient(ellipse at center, rgba(246, 192, 68, .18) 0%, rgba(246, 192, 68, .08) 38%, rgba(246, 192, 68, 0) 74%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .16) 40%, rgba(255, 255, 255, 0) 76%);
   filter: blur(16px);
+  mix-blend-mode: screen;
   pointer-events: none;
   content: "";
 }
@@ -292,7 +295,7 @@ h1 {
 .games-strip {
   display: grid;
   grid-template-columns: repeat(var(--game-count), var(--score-cell-size));
-  margin: 0 0 0 var(--player-label-width);
+  margin: 0 0 0 calc(var(--player-label-width) + var(--grid-line-half));
 }
 
 .game-card {
@@ -320,10 +323,10 @@ h1 {
 .game-icon {
   width: min(73px, calc(var(--score-cell-size) - 14px));
   height: min(73px, calc(var(--score-cell-size) - 14px));
-  border-radius: var(--radius);
+  border-radius: 0;
   object-fit: contain;
-  background: rgba(0, 0, 0, .18);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, .26);
+  background: transparent;
+  box-shadow: none;
 }
 
 .scoreboard-body {
@@ -331,7 +334,7 @@ h1 {
   align-items: flex-start;
   gap: 0;
   overflow: hidden;
-  border: 3px solid var(--line);
+  border: var(--grid-line-size) solid var(--line);
   border-radius: var(--radius-lg);
   background: #050607;
   box-shadow:
@@ -356,8 +359,8 @@ h1 {
   min-height: var(--score-cell-size);
   padding: 10px 12px;
   border: 0;
-  border-right: 3px solid var(--line);
-  border-bottom: 3px solid var(--line);
+  border-right: var(--grid-line-size) solid var(--line);
+  border-bottom: var(--grid-line-size) solid var(--line);
   background: rgba(255, 255, 255, .035);
   color: var(--text);
   font-size: clamp(24px, 3vw, 42px);
@@ -394,8 +397,8 @@ h1 {
   width: var(--score-cell-size);
   height: var(--score-cell-size);
   min-height: 0;
-  border-right: 3px solid var(--line);
-  border-bottom: 3px solid var(--line);
+  border-right: var(--grid-line-size) solid var(--line);
+  border-bottom: var(--grid-line-size) solid var(--line);
   overflow: hidden;
 }
 
