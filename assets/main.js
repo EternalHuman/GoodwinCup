@@ -168,6 +168,7 @@ function createGameCard(game) {
   const card = document.createElement("div");
   card.className = "game-card";
   card.style.setProperty("--game-color", game.color);
+  card.style.setProperty("--game-rgb", hexToRgb(game.color));
   card.title = game.title;
 
   const icon = document.createElement("img");
@@ -177,6 +178,21 @@ function createGameCard(game) {
 
   card.append(icon);
   return card;
+}
+
+function hexToRgb(hex) {
+  if (typeof hex !== "string") {
+    return "255, 255, 255";
+  }
+
+  const value = hex.replace("#", "");
+  const number = Number.parseInt(value, 16);
+
+  if (!Number.isFinite(number)) {
+    return "255, 255, 255";
+  }
+
+  return `${(number >> 16) & 255}, ${(number >> 8) & 255}, ${number & 255}`;
 }
 
 function createPlayerLabel(player, isLastRow = false) {
