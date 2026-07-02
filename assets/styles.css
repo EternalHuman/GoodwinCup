@@ -367,7 +367,7 @@ h1 {
   overflow: hidden;
   border: var(--grid-line-size) solid var(--line);
   border-radius: var(--radius-lg);
-  background: #050607;
+  background: transparent;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, .1),
     0 26px 70px rgba(0, 0, 0, .65),
@@ -380,7 +380,7 @@ h1 {
   flex: 0 0 var(--player-label-width);
   grid-auto-rows: var(--score-cell-size);
   width: var(--player-label-width);
-  background: #050607;
+  background: transparent;
 }
 
 .player-label {
@@ -416,7 +416,7 @@ h1 {
   display: grid;
   grid-auto-rows: var(--score-cell-size);
   grid-template-columns: repeat(var(--game-count), var(--score-cell-size)) var(--total-cell-width);
-  background: #050607;
+  background: transparent;
 }
 
 .score-cell,
@@ -536,8 +536,17 @@ h1 {
 }
 
 .game-form {
-  grid-template-columns: minmax(140px, 1.2fr) 92px minmax(140px, 1fr) minmax(140px, 1fr) minmax(130px, .75fr) 88px auto;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   align-items: end;
+}
+
+.game-form .color-field,
+.game-form .scale-field {
+  min-width: 92px;
+}
+
+.game-form .solid-button {
+  align-self: end;
 }
 
 .field {
@@ -617,7 +626,8 @@ h1 {
   gap: 0;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .list-row,
@@ -641,7 +651,8 @@ h1 {
 }
 
 .game-row {
-  grid-template-columns: auto 52px minmax(120px, 1fr) 54px minmax(120px, .85fr) minmax(112px, .55fr) 74px auto auto;
+  grid-template-columns: auto 52px minmax(180px, 1fr) 54px minmax(130px, .7fr) minmax(112px, .55fr) 74px auto auto;
+  min-width: 940px;
 }
 
 .row-actions {
@@ -740,6 +751,10 @@ h1 {
   .game-form,
   .game-row {
     grid-template-columns: 1fr;
+  }
+
+  .game-row {
+    min-width: 0;
   }
 
   .row-actions {
