@@ -1,5 +1,6 @@
 import {
   STORAGE_KEY,
+  calculatePlayerTotal,
   formatScore,
   loadState,
   saveState
@@ -122,6 +123,7 @@ function renderBoard() {
   board.className = "scoreboard-grid";
   board.style.setProperty("--game-count", state.games.length);
   board.style.setProperty("--player-count", state.players.length);
+  board.style.setProperty("--table-column-count", state.games.length + 1);
 
   const gamesStrip = document.createElement("div");
   gamesStrip.className = "games-strip";
@@ -138,20 +140,24 @@ function renderBoard() {
   playerLabels.className = "player-labels";
   playerLabels.setAttribute("aria-label", "Игроки");
 
-  for (const player of state.players) {
-    playerLabels.append(createPlayerLabel(player));
-  }
+  state.players.forEach((player, playerIndex) => {
+    playerLabels.append(createPlayerLabel(player, playerIndex === state.players.length - 1));
+  });
 
   const scoreGrid = document.createElement("div");
   scoreGrid.className = "score-grid";
   scoreGrid.setAttribute("role", "table");
   scoreGrid.setAttribute("aria-label", "Очки по играм");
 
-  for (const player of state.players) {
+  state.players.forEach((player, playerIndex) => {
+    const isLastRow = playerIndex === state.players.length - 1;
+
     for (const game of state.games) {
-      scoreGrid.append(createScoreCell(player, game));
+      scoreGrid.append(createScoreCell(player, game, { isLastRow }));
     }
-  }
+
+    scoreGrid.append(createTotalCell(player, { isLastRow }));
+  });
 
   body.append(playerLabels, scoreGrid);
   board.append(gamesStrip, body);
@@ -177,16 +183,19 @@ function createGameCard(game) {
   return card;
 }
 
-function createPlayerLabel(player) {
+function createPlayerLabel(player, isLastRow = false) {
   const label = document.createElement("div");
   label.className = "player-label";
+  label.classList.toggle("is-last-row", isLastRow);
   label.textContent = player.name;
   return label;
 }
 
-function createScoreCell(player, game) {
+function createScoreCell(player, game, options = {}) {
+  const { isLastRow = false } = options;
   const cell = document.createElement("div");
   cell.className = "score-cell";
+  cell.classList.toggle("is-last-row", isLastRow);
   cell.style.setProperty("--game-color", game.color);
   cell.setAttribute("role", "cell");
 
@@ -203,10 +212,23 @@ function createScoreCell(player, game) {
 
   input.addEventListener("input", () => {
     updateScore(player.id, game.id, input.value);
+    updatePlayerTotal(player.id);
     markDirty(player.id, game.id);
   });
 
   cell.append(input);
+  return cell;
+}
+
+function createTotalCell(player, options = {}) {
+  const { isLastRow = false } = options;
+  const cell = document.createElement("div");
+  cell.className = "total-cell";
+  cell.classList.toggle("is-last-row", isLastRow);
+  cell.dataset.totalFor = player.id;
+  cell.setAttribute("role", "cell");
+  cell.setAttribute("aria-label", `Итог ${player.name}`);
+  cell.textContent = formatScore(calculatePlayerTotal(state, player.id));
   return cell;
 }
 
@@ -258,6 +280,22 @@ function updateScoreInputs() {
     }
 
     input.value = formatScore(state.scores[playerId]?.[gameId]);
+  }
+
+  updateAllTotals();
+}
+
+function updatePlayerTotal(playerId) {
+  const totalCell = tableRoot.querySelector(`[data-total-for="${CSS.escape(playerId)}"]`);
+
+  if (totalCell) {
+    totalCell.textContent = formatScore(calculatePlayerTotal(state, playerId));
+  }
+}
+
+function updateAllTotals() {
+  for (const player of state.players) {
+    updatePlayerTotal(player.id);
   }
 }
 

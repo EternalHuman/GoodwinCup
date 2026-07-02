@@ -263,7 +263,7 @@ h1 {
 .games-strip {
   display: grid;
   grid-template-columns: repeat(var(--game-count), var(--score-cell-size));
-  margin: 0 0 10px calc(var(--player-label-width) + 14px);
+  margin: 0 0 0 var(--player-label-width);
 }
 
 .game-card {
@@ -315,48 +315,9 @@ h1 {
 .scoreboard-body {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-}
-
-.player-labels {
-  display: grid;
-  flex: 0 0 var(--player-label-width);
-  grid-auto-rows: var(--score-cell-size);
-  width: var(--player-label-width);
-}
-
-.player-label {
-  display: flex;
-  align-items: center;
-  min-height: var(--score-cell-size);
-  padding: 10px 12px;
-  border: 1px solid var(--line-soft);
-  border-bottom: 0;
-  background: rgba(255, 255, 255, .035);
-  color: var(--text);
-  font-size: clamp(14px, 1.8vw, 20px);
-  line-height: 1.15;
-  overflow-wrap: anywhere;
-}
-
-.player-label:first-child {
-  border-top-left-radius: var(--radius-lg);
-  border-top-right-radius: var(--radius);
-}
-
-.player-label:last-child {
-  border-bottom: 1px solid var(--line-soft);
-  border-bottom-left-radius: var(--radius-lg);
-  border-bottom-right-radius: var(--radius);
-}
-
-.score-grid {
-  display: grid;
-  grid-auto-rows: var(--score-cell-size);
-  grid-template-columns: repeat(var(--game-count), var(--score-cell-size));
+  gap: 0;
   overflow: hidden;
-  border-top: 3px solid var(--line);
-  border-left: 3px solid var(--line);
+  border: 3px solid var(--line);
   border-radius: var(--radius-lg);
   background: #050607;
   box-shadow:
@@ -365,7 +326,47 @@ h1 {
     0 0 38px rgba(255, 255, 255, .12);
 }
 
-.score-cell {
+.player-labels {
+  display: grid;
+  flex: 0 0 var(--player-label-width);
+  grid-auto-rows: var(--score-cell-size);
+  width: var(--player-label-width);
+  background: #050607;
+}
+
+.player-label {
+  display: flex;
+  align-items: center;
+  min-height: var(--score-cell-size);
+  padding: 10px 12px;
+  border: 0;
+  border-right: 3px solid var(--line);
+  border-bottom: 3px solid var(--line);
+  background: rgba(255, 255, 255, .035);
+  color: var(--text);
+  font-size: clamp(14px, 1.8vw, 20px);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.player-label:first-child {
+  border-radius: 0;
+}
+
+.player-label:last-child {
+  border-bottom: 0;
+  border-radius: 0;
+}
+
+.score-grid {
+  display: grid;
+  grid-auto-rows: var(--score-cell-size);
+  grid-template-columns: repeat(var(--table-column-count), var(--score-cell-size));
+  background: #050607;
+}
+
+.score-cell,
+.total-cell {
   position: relative;
   display: flex;
   align-items: center;
@@ -376,12 +377,40 @@ h1 {
   border-right: 3px solid var(--line);
   border-bottom: 3px solid var(--line);
   overflow: hidden;
+}
+
+.score-cell {
   background:
-    linear-gradient(rgba(255, 255, 255, .16), rgba(0, 0, 0, .08)),
-    var(--game-color);
+    linear-gradient(rgba(255, 255, 255, .1), rgba(0, 0, 0, .16)),
+    #050607;
+}
+
+.score-cell::before {
+  position: absolute;
+  inset: 0;
+  background: var(--game-color);
+  content: "";
+  opacity: .72;
+}
+
+.total-cell {
+  border-right: 0;
+  color: #fff;
+  background: rgba(255, 255, 255, .075);
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 700;
+  text-align: center;
+}
+
+.player-label.is-last-row,
+.score-cell.is-last-row,
+.total-cell.is-last-row {
+  border-bottom: 0;
 }
 
 .score-input {
+  position: relative;
+  z-index: 1;
   width: calc(100% - 16px);
   height: calc(100% - 16px);
   min-height: 0;
