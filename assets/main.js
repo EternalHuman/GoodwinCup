@@ -349,7 +349,9 @@ function parseScoreKey(key) {
 }
 
 function updateModeLabel() {
-  storageMode.textContent = currentMode === "cloud" ? "Cloudflare KV" : "localStorage";
+  if (storageMode) {
+    storageMode.textContent = "";
+  }
 }
 
 function updateSaveButton() {

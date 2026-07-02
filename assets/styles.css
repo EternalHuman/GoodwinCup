@@ -244,6 +244,12 @@ button:disabled {
   margin-bottom: 18px;
 }
 
+.scoreboard-surface .section-heading {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 h1 {
   margin: 0;
   font-size: clamp(22px, 3vw, 34px);
@@ -257,7 +263,7 @@ h1 {
 
 .scoreboard-grid {
   width: max-content;
-  min-width: 100%;
+  margin: 0 auto;
 }
 
 .games-strip {
@@ -670,6 +676,10 @@ h1 {
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .scoreboard-surface .section-heading {
+    align-items: center;
   }
 
   .inline-form {
