@@ -170,6 +170,8 @@ function createGameCard(game) {
   card.classList.toggle("has-title", game.showTitle === true);
   card.style.setProperty("--game-color", game.color);
   card.style.setProperty("--game-rgb", hexToRgb(game.color));
+  card.style.setProperty("--game-logo-size", `${73 * ((game.scale || 100) / 100)}px`);
+  card.style.setProperty("--game-logo-title-size", `${62 * ((game.scale || 100) / 100)}px`);
   card.title = game.title;
 
   const icon = document.createElement("img");

@@ -22,11 +22,11 @@ const DEFAULT_STATE = {
     { id: "player-6", name: "Nova" }
   ],
   games: [
-    { id: "game-1", title: "CS2", color: DEFAULT_COLORS[0], icon: makeDefaultIcon("CS", DEFAULT_COLORS[0]), showTitle: false },
-    { id: "game-2", title: "Dota", color: DEFAULT_COLORS[1], icon: makeDefaultIcon("D2", DEFAULT_COLORS[1]), showTitle: false },
-    { id: "game-3", title: "Race", color: DEFAULT_COLORS[2], icon: makeDefaultIcon("RC", DEFAULT_COLORS[2]), showTitle: false },
-    { id: "game-4", title: "FIFA", color: DEFAULT_COLORS[3], icon: makeDefaultIcon("FC", DEFAULT_COLORS[3]), showTitle: false },
-    { id: "game-5", title: "MK", color: DEFAULT_COLORS[4], icon: makeDefaultIcon("MK", DEFAULT_COLORS[4]), showTitle: false }
+    { id: "game-1", title: "CS2", color: DEFAULT_COLORS[0], icon: makeDefaultIcon("CS", DEFAULT_COLORS[0]), scale: 100, showTitle: false },
+    { id: "game-2", title: "Dota", color: DEFAULT_COLORS[1], icon: makeDefaultIcon("D2", DEFAULT_COLORS[1]), scale: 100, showTitle: false },
+    { id: "game-3", title: "Race", color: DEFAULT_COLORS[2], icon: makeDefaultIcon("RC", DEFAULT_COLORS[2]), scale: 100, showTitle: false },
+    { id: "game-4", title: "FIFA", color: DEFAULT_COLORS[3], icon: makeDefaultIcon("FC", DEFAULT_COLORS[3]), scale: 100, showTitle: false },
+    { id: "game-5", title: "MK", color: DEFAULT_COLORS[4], icon: makeDefaultIcon("MK", DEFAULT_COLORS[4]), scale: 100, showTitle: false }
   ],
   scores: {}
 };
@@ -111,6 +111,7 @@ function normalizeGames(games) {
             title: cleanText(game?.title, 32) || `Игра ${index + 1}`,
             color,
             icon: cleanIcon(game?.icon) || makeDefaultIcon(String(index + 1), color),
+            scale: cleanScale(game?.scale),
             showTitle: game?.showTitle === true
           };
         })
@@ -178,6 +179,16 @@ function cleanIcon(value) {
   }
 
   return "";
+}
+
+function cleanScale(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 100;
+  }
+
+  return Math.min(200, Math.max(25, Math.round(number)));
 }
 
 function makeDefaultIcon(label, color) {

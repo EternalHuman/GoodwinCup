@@ -332,8 +332,8 @@ h1 {
 }
 
 .game-icon {
-  width: min(73px, calc(var(--score-cell-size) - 14px));
-  height: min(73px, calc(var(--score-cell-size) - 14px));
+  width: min(var(--game-logo-size, 73px), calc(var(--score-cell-size) - 14px));
+  height: min(var(--game-logo-size, 73px), calc(var(--score-cell-size) - 14px));
   border-radius: 0;
   object-fit: contain;
   background: transparent;
@@ -341,8 +341,8 @@ h1 {
 }
 
 .game-card.has-title .game-icon {
-  width: min(62px, calc(var(--score-cell-size) - 22px));
-  height: min(62px, calc(var(--score-cell-size) - 22px));
+  width: min(var(--game-logo-title-size, 62px), calc(var(--score-cell-size) - 22px));
+  height: min(var(--game-logo-title-size, 62px), calc(var(--score-cell-size) - 22px));
   transform: translateY(-3px);
 }
 
@@ -536,7 +536,7 @@ h1 {
 }
 
 .game-form {
-  grid-template-columns: minmax(140px, 1.2fr) 92px minmax(140px, 1fr) minmax(140px, 1fr) minmax(130px, .75fr) auto;
+  grid-template-columns: minmax(140px, 1.2fr) 92px minmax(140px, 1fr) minmax(140px, 1fr) minmax(130px, .75fr) 88px auto;
   align-items: end;
 }
 
@@ -606,7 +606,9 @@ h1 {
 }
 
 .color-field input,
-.compact-color {
+.compact-color,
+.scale-field input,
+.compact-scale {
   padding: 2px;
 }
 
@@ -639,7 +641,7 @@ h1 {
 }
 
 .game-row {
-  grid-template-columns: auto 52px minmax(120px, 1fr) 54px minmax(120px, .85fr) minmax(112px, .55fr) auto auto;
+  grid-template-columns: auto 52px minmax(120px, 1fr) 54px minmax(120px, .85fr) minmax(112px, .55fr) 74px auto auto;
 }
 
 .row-actions {
@@ -685,6 +687,16 @@ h1 {
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, .06);
+}
+
+.compact-scale {
+  width: 74px;
+  min-height: 40px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  color: var(--text);
+  background: rgba(255, 255, 255, .06);
+  text-align: center;
 }
 
 .compact-file {

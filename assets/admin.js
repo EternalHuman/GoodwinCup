@@ -21,6 +21,7 @@ const gameColor = document.querySelector("#game-color");
 const gameIconUrl = document.querySelector("#game-icon-url");
 const gameIconFile = document.querySelector("#game-icon-file");
 const gameShowTitle = document.querySelector("#game-show-title");
+const gameScale = document.querySelector("#game-scale");
 const gamesList = document.querySelector("#games-list");
 
 let state = null;
@@ -199,6 +200,20 @@ function renderGames() {
 
     showTitleLabel.append(showTitleInput, showTitleText);
 
+    const scaleInput = document.createElement("input");
+    scaleInput.className = "compact-scale";
+    scaleInput.type = "number";
+    scaleInput.min = "25";
+    scaleInput.max = "200";
+    scaleInput.step = "1";
+    scaleInput.value = String(game.scale || 100);
+    scaleInput.setAttribute("aria-label", "Scale логотипа, процентов");
+    scaleInput.addEventListener("change", () => {
+      game.scale = clampScale(scaleInput.value);
+      scaleInput.value = String(game.scale);
+      markDirty();
+    });
+
     const copyButton = document.createElement("button");
     copyButton.className = "ghost-button compact-action";
     copyButton.type = "button";
@@ -211,7 +226,7 @@ function renderGames() {
     removeButton.textContent = "Удалить";
     removeButton.addEventListener("click", () => removeGame(game.id));
 
-    row.append(orderActions, preview, titleInput, colorInput, fileInput, showTitleLabel, copyButton, removeButton);
+    row.append(orderActions, preview, titleInput, colorInput, fileInput, showTitleLabel, scaleInput, copyButton, removeButton);
     gamesList.append(row);
   });
 }
@@ -281,11 +296,13 @@ async function addGame(event) {
     title,
     color,
     icon: icon || makeDefaultIcon(title.slice(0, 3), color),
+    scale: clampScale(gameScale.value),
     showTitle: gameShowTitle.checked
   });
 
   gameForm.reset();
   gameColor.value = DEFAULT_COLORS[state.games.length % DEFAULT_COLORS.length];
+  gameScale.value = "100";
   renderAdmin();
   markDirty();
 }
@@ -357,6 +374,16 @@ function makeCopyTitle(title) {
   const suffix = " копия";
   const base = title.slice(0, 32 - suffix.length);
   return `${base}${suffix}`;
+}
+
+function clampScale(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 100;
+  }
+
+  return Math.min(200, Math.max(25, Math.round(number)));
 }
 
 function markDirty() {
