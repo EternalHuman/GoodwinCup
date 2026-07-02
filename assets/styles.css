@@ -68,8 +68,8 @@ body::before {
   z-index: 0;
   inset: -48px;
   background: url("/assets/background.jpg") center / cover no-repeat;
-  filter: blur(34px);
-  opacity: .82;
+  filter: blur(22px);
+  opacity: .88;
   transform: scale(1.08);
 }
 
