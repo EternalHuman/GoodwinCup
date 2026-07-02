@@ -22,8 +22,8 @@
   --grid-line-size: 2px;
   --game-cell-alpha: .64;
   --game-logo-cell-top-alpha: 0;
-  --player-cell-alpha: .018;
-  --total-cell-alpha: .04;
+  --player-cell-alpha: .006;
+  --total-cell-alpha: .016;
   --score-cell-size: clamp(72px, 7.8vw, 104px);
   --total-cell-width: clamp(92px, 9vw, 132px);
   --player-label-width: clamp(160px, 20vw, 260px);
@@ -67,7 +67,7 @@ body::after {
 body::before {
   z-index: 0;
   inset: -48px;
-  background: url("/assets/ff9235cd827885e439aef1bb9e153754.jpg") center / cover no-repeat;
+  background: url("/assets/background.jpg") center / cover no-repeat;
   filter: blur(34px);
   opacity: .82;
   transform: scale(1.08);
