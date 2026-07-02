@@ -1,5 +1,6 @@
 const API_ENDPOINT = "/api/state";
-const STORAGE_KEY = "goodwin-cup-state-v1";
+
+export const STORAGE_KEY = "goodwin-cup-state-v1";
 
 export const DEFAULT_COLORS = [
   "#d7083a",
@@ -166,6 +167,13 @@ export function fileToDataUrl(file) {
   });
 }
 
+export function makeDefaultIcon(label, color) {
+  const safeLabel = String(label).slice(0, 3).replace(/[<>&"]/g, "");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="18" fill="${color}"/><circle cx="48" cy="48" r="30" fill="rgba(255,255,255,.16)"/><text x="48" y="56" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="white">${safeLabel}</text></svg>`;
+
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 function normalizePlayers(players) {
   const seen = new Set();
 
@@ -286,11 +294,4 @@ function cleanIcon(value) {
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
-}
-
-function makeDefaultIcon(label, color) {
-  const safeLabel = String(label).slice(0, 3).replace(/[<>&"]/g, "");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="18" fill="${color}"/><circle cx="48" cy="48" r="30" fill="rgba(255,255,255,.16)"/><text x="48" y="56" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="white">${safeLabel}</text></svg>`;
-
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }

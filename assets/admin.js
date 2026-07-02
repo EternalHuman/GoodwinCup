@@ -1,12 +1,15 @@
 import {
   DEFAULT_COLORS,
+  STORAGE_KEY,
   createId,
   fileToDataUrl,
   loadState,
+  makeDefaultIcon,
   saveState
 } from "./store.js";
 
 const saveStatus = document.querySelector("#save-status");
+const saveButton = document.querySelector("#save-button");
 const playersCount = document.querySelector("#players-count");
 const gamesCount = document.querySelector("#games-count");
 const playerForm = document.querySelector("#player-form");
@@ -21,20 +24,51 @@ const gamesList = document.querySelector("#games-list");
 
 let state = null;
 let currentMode = "local";
-let saveTimer = 0;
+let hasUnsavedChanges = false;
 
 init();
 
 async function init() {
-  setStatus("Загрузка");
+  await reloadState();
+
+  saveButton.addEventListener("click", persistState);
+  playerForm.addEventListener("submit", addPlayer);
+  gameForm.addEventListener("submit", addGame);
+  window.addEventListener("storage", handleStorageUpdate);
+  window.addEventListener("beforeunload", warnAboutUnsavedChanges);
+}
+
+async function reloadState(options = {}) {
+  const { silent = false } = options;
+
+  if (!silent) {
+    setStatus("Загрузка");
+  }
+
   const result = await loadState();
   state = result.state;
   currentMode = result.mode;
+  hasUnsavedChanges = false;
   renderAdmin();
   setStatus(statusReadyText());
+  updateSaveButton();
+}
 
-  playerForm.addEventListener("submit", addPlayer);
-  gameForm.addEventListener("submit", addGame);
+function handleStorageUpdate(event) {
+  if (event.key !== STORAGE_KEY || hasUnsavedChanges) {
+    return;
+  }
+
+  reloadState({ silent: true });
+}
+
+function warnAboutUnsavedChanges(event) {
+  if (!hasUnsavedChanges) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = "";
 }
 
 function renderAdmin() {
@@ -65,7 +99,7 @@ function renderPlayers() {
     input.addEventListener("change", () => {
       player.name = input.value.trim() || player.name;
       input.value = player.name;
-      scheduleSave();
+      markDirty();
     });
 
     const removeButton = document.createElement("button");
@@ -87,9 +121,16 @@ function renderGames() {
     return;
   }
 
-  for (const game of state.games) {
+  state.games.forEach((game, index) => {
     const row = document.createElement("div");
     row.className = "list-row game-row";
+
+    const orderActions = document.createElement("div");
+    orderActions.className = "row-actions order-actions";
+    orderActions.append(
+      createIconButton("↑", `Поднять игру ${game.title}`, () => moveGame(game.id, -1), index === 0),
+      createIconButton("↓", `Опустить игру ${game.title}`, () => moveGame(game.id, 1), index === state.games.length - 1)
+    );
 
     const preview = document.createElement("img");
     preview.className = "row-game-icon";
@@ -105,7 +146,7 @@ function renderGames() {
     titleInput.addEventListener("change", () => {
       game.title = titleInput.value.trim() || game.title;
       titleInput.value = game.title;
-      scheduleSave();
+      markDirty();
     });
 
     const colorInput = document.createElement("input");
@@ -115,7 +156,7 @@ function renderGames() {
     colorInput.setAttribute("aria-label", "Цвет игры");
     colorInput.addEventListener("input", () => {
       game.color = colorInput.value;
-      scheduleSave();
+      markDirty();
     });
 
     const fileInput = document.createElement("input");
@@ -137,8 +178,14 @@ function renderGames() {
 
       game.icon = await fileToDataUrl(file);
       preview.src = game.icon;
-      scheduleSave();
+      markDirty();
     });
+
+    const copyButton = document.createElement("button");
+    copyButton.className = "ghost-button compact-action";
+    copyButton.type = "button";
+    copyButton.textContent = "Копия";
+    copyButton.addEventListener("click", () => copyGame(game.id));
 
     const removeButton = document.createElement("button");
     removeButton.className = "danger-button";
@@ -146,9 +193,21 @@ function renderGames() {
     removeButton.textContent = "Удалить";
     removeButton.addEventListener("click", () => removeGame(game.id));
 
-    row.append(preview, titleInput, colorInput, fileInput, removeButton);
+    row.append(orderActions, preview, titleInput, colorInput, fileInput, copyButton, removeButton);
     gamesList.append(row);
-  }
+  });
+}
+
+function createIconButton(text, label, onClick, disabled = false) {
+  const button = document.createElement("button");
+  button.className = "icon-button";
+  button.type = "button";
+  button.textContent = text;
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.disabled = disabled;
+  button.addEventListener("click", onClick);
+  return button;
 }
 
 function createEmptyRow(text) {
@@ -158,7 +217,7 @@ function createEmptyRow(text) {
   return empty;
 }
 
-async function addPlayer(event) {
+function addPlayer(event) {
   event.preventDefault();
   const name = playerName.value.trim();
 
@@ -174,8 +233,8 @@ async function addPlayer(event) {
   state.players.push(player);
   state.scores[player.id] = {};
   playerForm.reset();
-  await persistState();
   renderAdmin();
+  markDirty();
 }
 
 async function addGame(event) {
@@ -203,16 +262,16 @@ async function addGame(event) {
     id: createId("game"),
     title,
     color,
-    icon: icon || ""
+    icon: icon || makeDefaultIcon(title.slice(0, 3), color)
   });
 
   gameForm.reset();
   gameColor.value = DEFAULT_COLORS[state.games.length % DEFAULT_COLORS.length];
-  await persistState();
   renderAdmin();
+  markDirty();
 }
 
-async function removePlayer(playerId) {
+function removePlayer(playerId) {
   const player = state.players.find((item) => item.id === playerId);
 
   if (!player || !confirm(`Удалить никнейм "${player.name}"?`)) {
@@ -221,11 +280,11 @@ async function removePlayer(playerId) {
 
   state.players = state.players.filter((item) => item.id !== playerId);
   delete state.scores[playerId];
-  await persistState();
   renderAdmin();
+  markDirty();
 }
 
-async function removeGame(gameId) {
+function removeGame(gameId) {
   const game = state.games.find((item) => item.id === gameId);
 
   if (!game || !confirm(`Удалить игру "${game.title}"?`)) {
@@ -238,23 +297,70 @@ async function removeGame(gameId) {
     delete playerScores[gameId];
   }
 
-  await persistState();
   renderAdmin();
+  markDirty();
 }
 
-function scheduleSave() {
-  setStatus("Сохранение");
-  window.clearTimeout(saveTimer);
-  saveTimer = window.setTimeout(async () => {
-    await persistState();
-  }, 350);
+function moveGame(gameId, direction) {
+  const currentIndex = state.games.findIndex((game) => game.id === gameId);
+  const nextIndex = currentIndex + direction;
+
+  if (currentIndex < 0 || nextIndex < 0 || nextIndex >= state.games.length) {
+    return;
+  }
+
+  const [game] = state.games.splice(currentIndex, 1);
+  state.games.splice(nextIndex, 0, game);
+  renderAdmin();
+  markDirty();
+}
+
+function copyGame(gameId) {
+  const currentIndex = state.games.findIndex((game) => game.id === gameId);
+
+  if (currentIndex < 0) {
+    return;
+  }
+
+  const source = state.games[currentIndex];
+  const copy = {
+    ...source,
+    id: createId("game"),
+    title: makeCopyTitle(source.title)
+  };
+
+  state.games.splice(currentIndex + 1, 0, copy);
+  renderAdmin();
+  markDirty();
+}
+
+function makeCopyTitle(title) {
+  const suffix = " копия";
+  const base = title.slice(0, 32 - suffix.length);
+  return `${base}${suffix}`;
+}
+
+function markDirty() {
+  hasUnsavedChanges = true;
+  setStatus("Есть изменения");
+  updateSaveButton();
 }
 
 async function persistState() {
+  if (!state) {
+    return;
+  }
+
+  setStatus("Сохранение");
+  saveButton.disabled = true;
+
   const result = await saveState(state);
   state = result.state;
   currentMode = result.mode;
+  hasUnsavedChanges = false;
+  renderAdmin();
   setStatus(statusReadyText());
+  updateSaveButton();
 }
 
 function checkIconSize(file) {
@@ -266,6 +372,10 @@ function checkIconSize(file) {
 
   alert("Иконка должна быть меньше 750 КБ.");
   return false;
+}
+
+function updateSaveButton() {
+  saveButton.disabled = !hasUnsavedChanges;
 }
 
 function statusReadyText() {

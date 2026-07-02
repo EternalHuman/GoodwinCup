@@ -1,34 +1,101 @@
 import {
-  calculatePlayerTotal,
+  STORAGE_KEY,
   formatScore,
   loadState,
   saveState
 } from "./store.js";
 
+const AUTO_REFRESH_INTERVAL = 2000;
+
 const tableRoot = document.querySelector("#table-root");
 const saveStatus = document.querySelector("#save-status");
 const storageMode = document.querySelector("#storage-mode");
 const refreshButton = document.querySelector("#refresh-button");
+const saveButton = document.querySelector("#save-button");
 
 let state = null;
 let currentMode = "local";
-let saveTimer = 0;
+let stateSignature = "";
+let hasUnsavedChanges = false;
 
 init();
 
 async function init() {
   await reloadState();
-  refreshButton.addEventListener("click", reloadState);
+
+  refreshButton.addEventListener("click", refreshState);
+  saveButton.addEventListener("click", persistState);
+  window.addEventListener("storage", handleStorageUpdate);
+  window.addEventListener("beforeunload", warnAboutUnsavedChanges);
+  window.setInterval(refreshVisibleBoard, AUTO_REFRESH_INTERVAL);
 }
 
-async function reloadState() {
-  setStatus("Загрузка");
+async function reloadState(options = {}) {
+  const { silent = false } = options;
+
+  if (!silent) {
+    setStatus("Загрузка");
+  }
+
   const result = await loadState();
+  applyLoadedState(result, { forceRender: true });
+
+  if (!silent) {
+    setStatus(hasUnsavedChanges ? "Есть изменения" : "Готово");
+  }
+}
+
+async function refreshState() {
+  if (hasUnsavedChanges && !confirm("Обновить таблицу и сбросить несохраненные изменения?")) {
+    return;
+  }
+
+  hasUnsavedChanges = false;
+  updateSaveButton();
+  await reloadState();
+}
+
+async function refreshVisibleBoard() {
+  if (hasUnsavedChanges || document.visibilityState !== "visible") {
+    return;
+  }
+
+  const result = await loadState();
+  applyLoadedState(result);
+}
+
+function handleStorageUpdate(event) {
+  if (event.key !== STORAGE_KEY || hasUnsavedChanges) {
+    return;
+  }
+
+  reloadState({ silent: true });
+}
+
+function warnAboutUnsavedChanges(event) {
+  if (!hasUnsavedChanges) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = "";
+}
+
+function applyLoadedState(result, options = {}) {
+  const { forceRender = false } = options;
+  const nextSignature = JSON.stringify(result.state);
+  const shouldRender = forceRender || nextSignature !== stateSignature;
+
   state = result.state;
   currentMode = result.mode;
-  renderBoard();
+  stateSignature = nextSignature;
+
+  if (shouldRender) {
+    renderBoard();
+  }
+
   updateModeLabel();
-  setStatus("Готово");
+  updateSaveButton();
 }
 
 function renderBoard() {
@@ -41,12 +108,7 @@ function renderBoard() {
     const label = document.createElement("strong");
     label.textContent = "Таблица пустая";
 
-    const link = document.createElement("a");
-    link.className = "solid-button";
-    link.href = "/admin/";
-    link.textContent = "Открыть админку";
-
-    empty.append(label, link);
+    empty.append(label);
     tableRoot.append(empty);
     return;
   }
@@ -54,46 +116,51 @@ function renderBoard() {
   const scroller = document.createElement("div");
   scroller.className = "table-scroller";
 
-  const table = document.createElement("div");
-  table.className = "score-table";
-  table.setAttribute("role", "table");
-  table.style.gridTemplateColumns = `minmax(170px, 1.45fr) repeat(${state.games.length}, minmax(98px, .8fr)) minmax(104px, .72fr)`;
+  const board = document.createElement("div");
+  board.className = "scoreboard-grid";
+  board.style.setProperty("--game-count", state.games.length);
+  board.style.setProperty("--player-count", state.players.length);
 
-  table.append(createHeaderCell("Никнейм", "sticky-left corner-cell"));
+  const gamesStrip = document.createElement("div");
+  gamesStrip.className = "games-strip";
+  gamesStrip.setAttribute("aria-label", "Игры");
 
   for (const game of state.games) {
-    table.append(createGameHeader(game));
+    gamesStrip.append(createGameCard(game));
   }
 
-  table.append(createHeaderCell("Итого", "sticky-right total-head"));
+  const body = document.createElement("div");
+  body.className = "scoreboard-body";
+
+  const playerLabels = document.createElement("div");
+  playerLabels.className = "player-labels";
+  playerLabels.setAttribute("aria-label", "Игроки");
 
   for (const player of state.players) {
-    table.append(createPlayerCell(player));
-
-    for (const game of state.games) {
-      table.append(createScoreCell(player, game));
-    }
-
-    table.append(createTotalCell(player));
+    playerLabels.append(createPlayerLabel(player));
   }
 
-  scroller.append(table);
+  const scoreGrid = document.createElement("div");
+  scoreGrid.className = "score-grid";
+  scoreGrid.setAttribute("role", "table");
+  scoreGrid.setAttribute("aria-label", "Очки по играм");
+
+  for (const player of state.players) {
+    for (const game of state.games) {
+      scoreGrid.append(createScoreCell(player, game));
+    }
+  }
+
+  body.append(playerLabels, scoreGrid);
+  board.append(gamesStrip, body);
+  scroller.append(board);
   tableRoot.append(scroller);
 }
 
-function createHeaderCell(text, extraClass = "") {
-  const cell = document.createElement("div");
-  cell.className = `table-cell header-cell ${extraClass}`;
-  cell.setAttribute("role", "columnheader");
-  cell.textContent = text;
-  return cell;
-}
-
-function createGameHeader(game) {
-  const cell = document.createElement("div");
-  cell.className = "table-cell header-cell game-head";
-  cell.style.setProperty("--game-color", game.color);
-  cell.setAttribute("role", "columnheader");
+function createGameCard(game) {
+  const card = document.createElement("div");
+  card.className = "game-card";
+  card.style.setProperty("--game-color", game.color);
 
   const icon = document.createElement("img");
   icon.className = "game-icon";
@@ -104,21 +171,20 @@ function createGameHeader(game) {
   title.className = "game-title";
   title.textContent = game.title;
 
-  cell.append(icon, title);
-  return cell;
+  card.append(icon, title);
+  return card;
 }
 
-function createPlayerCell(player) {
-  const cell = document.createElement("div");
-  cell.className = "table-cell player-cell sticky-left";
-  cell.setAttribute("role", "rowheader");
-  cell.textContent = player.name;
-  return cell;
+function createPlayerLabel(player) {
+  const label = document.createElement("div");
+  label.className = "player-label";
+  label.textContent = player.name;
+  return label;
 }
 
 function createScoreCell(player, game) {
   const cell = document.createElement("div");
-  cell.className = "table-cell score-cell";
+  cell.className = "score-cell";
   cell.style.setProperty("--game-color", game.color);
   cell.setAttribute("role", "cell");
 
@@ -133,20 +199,10 @@ function createScoreCell(player, game) {
 
   input.addEventListener("input", () => {
     updateScore(player.id, game.id, input.value);
-    updatePlayerTotal(player.id);
-    scheduleSave();
+    markDirty();
   });
 
   cell.append(input);
-  return cell;
-}
-
-function createTotalCell(player) {
-  const cell = document.createElement("div");
-  cell.className = "table-cell total-cell sticky-right";
-  cell.dataset.totalFor = player.id;
-  cell.setAttribute("role", "cell");
-  cell.textContent = formatScore(calculatePlayerTotal(state, player.id));
   return cell;
 }
 
@@ -165,30 +221,36 @@ function updateScore(playerId, gameId, rawValue) {
   }
 }
 
-function updatePlayerTotal(playerId) {
-  const totalCell = tableRoot.querySelector(`[data-total-for="${CSS.escape(playerId)}"]`);
-
-  if (totalCell) {
-    totalCell.textContent = formatScore(calculatePlayerTotal(state, playerId));
-  }
-}
-
-function scheduleSave() {
-  setStatus("Сохранение");
-  window.clearTimeout(saveTimer);
-  saveTimer = window.setTimeout(persistState, 350);
+function markDirty() {
+  hasUnsavedChanges = true;
+  setStatus("Есть изменения");
+  updateSaveButton();
 }
 
 async function persistState() {
+  if (!state) {
+    return;
+  }
+
+  setStatus("Сохранение");
+  saveButton.disabled = true;
+
   const result = await saveState(state);
-  state = result.state;
-  currentMode = result.mode;
-  updateModeLabel();
-  setStatus(currentMode === "cloud" ? "Сохранено" : "Локально");
+  hasUnsavedChanges = false;
+  applyLoadedState(result, { forceRender: true });
+  setStatus(statusReadyText());
 }
 
 function updateModeLabel() {
   storageMode.textContent = currentMode === "cloud" ? "Cloudflare KV" : "localStorage";
+}
+
+function updateSaveButton() {
+  saveButton.disabled = !hasUnsavedChanges;
+}
+
+function statusReadyText() {
+  return currentMode === "cloud" ? "Сохранено" : "Локально";
 }
 
 function setStatus(text) {

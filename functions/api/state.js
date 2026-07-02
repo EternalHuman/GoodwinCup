@@ -1,5 +1,15 @@
 const STATE_KEY = "goodwin-cup-state";
-const DEFAULT_COLORS = ["#d7083a", "#236ad5", "#78d93f", "#f2a900", "#f58b23"];
+
+const DEFAULT_COLORS = [
+  "#d7083a",
+  "#236ad5",
+  "#78d93f",
+  "#f2a900",
+  "#f58b23",
+  "#18b4a7",
+  "#b65cff",
+  "#f04f75"
+];
 
 const DEFAULT_STATE = {
   version: 1,
