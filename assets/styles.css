@@ -230,7 +230,6 @@ button:disabled {
   transform: translateY(-1px);
 }
 
-.scoreboard-surface,
 .admin-section {
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
@@ -239,26 +238,8 @@ button:disabled {
 }
 
 .scoreboard-surface {
-  padding: 22px;
-  overflow: hidden;
-}
-
-.section-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.scoreboard-surface .section-heading {
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.scoreboard-surface h1 {
-  font-size: clamp(44px, 6vw, 68px);
+  padding: 0 0 28px;
+  overflow: visible;
 }
 
 h1 {
@@ -273,8 +254,30 @@ h1 {
 }
 
 .scoreboard-grid {
+  position: relative;
+  isolation: isolate;
   width: max-content;
   margin: 0 auto;
+  padding-bottom: 34px;
+}
+
+.scoreboard-grid::after {
+  position: absolute;
+  z-index: 0;
+  right: 6%;
+  bottom: 2px;
+  left: 6%;
+  height: 42px;
+  background: radial-gradient(ellipse at center, rgba(246, 192, 68, .18) 0%, rgba(246, 192, 68, .08) 38%, rgba(246, 192, 68, 0) 74%);
+  filter: blur(16px);
+  pointer-events: none;
+  content: "";
+}
+
+.games-strip,
+.scoreboard-body {
+  position: relative;
+  z-index: 1;
 }
 
 .games-strip {
@@ -675,7 +678,6 @@ h1 {
     font-size: 24px;
   }
 
-  .scoreboard-surface,
   .admin-section {
     padding: 14px;
   }
@@ -683,10 +685,6 @@ h1 {
   .section-heading {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .scoreboard-surface .section-heading {
-    align-items: center;
   }
 
   .inline-form {
