@@ -275,12 +275,16 @@ h1 {
 .scoreboard-grid::after {
   position: absolute;
   z-index: 0;
-  right: 6%;
-  bottom: 2px;
-  left: 6%;
-  height: 42px;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .16) 40%, rgba(255, 255, 255, 0) 76%);
-  filter: blur(16px);
+  right: 2%;
+  bottom: -6px;
+  left: 2%;
+  height: 72px;
+  background:
+    linear-gradient(162deg, rgba(255, 255, 255, 0) 0 43%, rgba(255, 255, 255, .26) 49%, rgba(255, 255, 255, .62) 56%, rgba(255, 255, 255, 0) 66%),
+    linear-gradient(198deg, rgba(255, 255, 255, 0) 0 43%, rgba(255, 255, 255, .26) 49%, rgba(255, 255, 255, .62) 56%, rgba(255, 255, 255, 0) 66%);
+  filter: blur(18px);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 0 46%, transparent 78%);
+  mask-image: radial-gradient(ellipse at center, #000 0 46%, transparent 78%);
   mix-blend-mode: screen;
   pointer-events: none;
   content: "";
