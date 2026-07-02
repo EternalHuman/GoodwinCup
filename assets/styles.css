@@ -1,6 +1,6 @@
 @font-face {
   font-family: "GothamPro";
-  src: url("/assets/gothampro_black.ttf") format("truetype");
+  src: url("/assets/gothampro_bold.ttf") format("truetype");
   font-display: swap;
   font-style: normal;
   font-weight: 700;
@@ -265,6 +265,7 @@ h1 {
 
 .table-scroller {
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 10px 0 4px;
 }
 
@@ -273,18 +274,22 @@ h1 {
   isolation: isolate;
   width: max-content;
   margin: 0 auto;
-  padding-bottom: 34px;
+  padding-bottom: 52px;
 }
 
 .scoreboard-grid::after {
   position: absolute;
   z-index: 0;
-  right: 6%;
-  bottom: 2px;
-  left: 6%;
-  height: 42px;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .16) 40%, rgba(255, 255, 255, 0) 76%);
-  filter: blur(16px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 54px;
+  background:
+    radial-gradient(ellipse 42% 88% at 50% 8%, rgba(255, 255, 255, .58) 0%, rgba(255, 255, 255, .24) 38%, rgba(255, 255, 255, .07) 66%, rgba(255, 255, 255, 0) 94%),
+    radial-gradient(ellipse 84% 82% at 50% 18%, rgba(255, 255, 255, .18) 0%, rgba(255, 255, 255, .08) 46%, rgba(255, 255, 255, 0) 91%);
+  filter: blur(8px);
+  -webkit-mask-image: radial-gradient(ellipse 56% 92% at 50% 16%, #000 0%, rgba(0, 0, 0, .78) 48%, transparent 96%);
+  mask-image: radial-gradient(ellipse 56% 92% at 50% 16%, #000 0%, rgba(0, 0, 0, .78) 48%, transparent 96%);
   mix-blend-mode: screen;
   pointer-events: none;
   content: "";
@@ -338,12 +343,13 @@ h1 {
   object-fit: contain;
   background: transparent;
   box-shadow: none;
+  transform: translateY(var(--game-logo-offset-y, 0px));
 }
 
 .game-card.has-title .game-icon {
   width: min(var(--game-logo-title-size, 62px), calc(var(--score-cell-size) - 22px));
   height: min(var(--game-logo-title-size, 62px), calc(var(--score-cell-size) - 22px));
-  transform: translateY(-3px);
+  transform: translateY(calc(var(--game-logo-offset-y, 0px) - 3px));
 }
 
 .game-title {
@@ -541,7 +547,8 @@ h1 {
 }
 
 .game-form .color-field,
-.game-form .scale-field {
+.game-form .scale-field,
+.game-form .offset-field {
   min-width: 92px;
 }
 
@@ -617,7 +624,9 @@ h1 {
 .color-field input,
 .compact-color,
 .scale-field input,
-.compact-scale {
+.compact-scale,
+.offset-field input,
+.compact-offset {
   padding: 2px;
 }
 
@@ -651,8 +660,8 @@ h1 {
 }
 
 .game-row {
-  grid-template-columns: auto 52px minmax(180px, 1fr) 54px minmax(130px, .7fr) minmax(112px, .55fr) 74px auto auto;
-  min-width: 940px;
+  grid-template-columns: auto 52px minmax(180px, 1fr) 54px minmax(130px, .7fr) minmax(112px, .55fr) 74px 74px auto auto;
+  min-width: 1020px;
 }
 
 .row-actions {
@@ -700,7 +709,8 @@ h1 {
   background: rgba(255, 255, 255, .06);
 }
 
-.compact-scale {
+.compact-scale,
+.compact-offset {
   width: 74px;
   min-height: 40px;
   border: 1px solid var(--line-soft);

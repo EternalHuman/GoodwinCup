@@ -172,6 +172,7 @@ function createGameCard(game) {
   card.style.setProperty("--game-rgb", hexToRgb(game.color));
   card.style.setProperty("--game-logo-size", `${73 * ((game.scale || 100) / 100)}px`);
   card.style.setProperty("--game-logo-title-size", `${62 * ((game.scale || 100) / 100)}px`);
+  card.style.setProperty("--game-logo-offset-y", `${game.offsetY || 0}px`);
   card.title = game.title;
 
   const icon = document.createElement("img");

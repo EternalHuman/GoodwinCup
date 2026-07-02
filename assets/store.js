@@ -29,6 +29,7 @@ const DEFAULT_STATE = {
       title: "CS2",
       color: DEFAULT_COLORS[0],
       icon: makeDefaultIcon("CS", DEFAULT_COLORS[0]),
+      offsetY: 0,
       scale: 100,
       showTitle: false
     },
@@ -37,6 +38,7 @@ const DEFAULT_STATE = {
       title: "Dota",
       color: DEFAULT_COLORS[1],
       icon: makeDefaultIcon("D2", DEFAULT_COLORS[1]),
+      offsetY: 0,
       scale: 100,
       showTitle: false
     },
@@ -45,6 +47,7 @@ const DEFAULT_STATE = {
       title: "Race",
       color: DEFAULT_COLORS[2],
       icon: makeDefaultIcon("RC", DEFAULT_COLORS[2]),
+      offsetY: 0,
       scale: 100,
       showTitle: false
     },
@@ -53,6 +56,7 @@ const DEFAULT_STATE = {
       title: "FIFA",
       color: DEFAULT_COLORS[3],
       icon: makeDefaultIcon("FC", DEFAULT_COLORS[3]),
+      offsetY: 0,
       scale: 100,
       showTitle: false
     },
@@ -61,6 +65,7 @@ const DEFAULT_STATE = {
       title: "MK",
       color: DEFAULT_COLORS[4],
       icon: makeDefaultIcon("MK", DEFAULT_COLORS[4]),
+      offsetY: 0,
       scale: 100,
       showTitle: false
     }
@@ -217,6 +222,7 @@ function normalizeGames(games) {
             title: cleanText(game?.title, 32) || `Игра ${index + 1}`,
             color,
             icon: cleanIcon(game?.icon) || makeDefaultIcon(String(index + 1), color),
+            offsetY: cleanOffset(game?.offsetY),
             scale: cleanScale(game?.scale),
             showTitle: game?.showTitle === true
           };
@@ -312,6 +318,16 @@ function cleanScale(value) {
   }
 
   return Math.min(200, Math.max(25, Math.round(number)));
+}
+
+function cleanOffset(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(-100, Math.round(number)));
 }
 
 function clone(value) {

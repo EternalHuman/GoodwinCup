@@ -22,6 +22,7 @@ const gameIconUrl = document.querySelector("#game-icon-url");
 const gameIconFile = document.querySelector("#game-icon-file");
 const gameShowTitle = document.querySelector("#game-show-title");
 const gameScale = document.querySelector("#game-scale");
+const gameOffsetY = document.querySelector("#game-offset-y");
 const gamesList = document.querySelector("#games-list");
 
 let state = null;
@@ -214,6 +215,20 @@ function renderGames() {
       markDirty();
     });
 
+    const offsetInput = document.createElement("input");
+    offsetInput.className = "compact-offset";
+    offsetInput.type = "number";
+    offsetInput.min = "-100";
+    offsetInput.max = "100";
+    offsetInput.step = "1";
+    offsetInput.value = String(game.offsetY || 0);
+    offsetInput.setAttribute("aria-label", "Смещение логотипа по вертикали, пикселей");
+    offsetInput.addEventListener("change", () => {
+      game.offsetY = clampOffset(offsetInput.value);
+      offsetInput.value = String(game.offsetY);
+      markDirty();
+    });
+
     const copyButton = document.createElement("button");
     copyButton.className = "ghost-button compact-action";
     copyButton.type = "button";
@@ -226,7 +241,7 @@ function renderGames() {
     removeButton.textContent = "Удалить";
     removeButton.addEventListener("click", () => removeGame(game.id));
 
-    row.append(orderActions, preview, titleInput, colorInput, fileInput, showTitleLabel, scaleInput, copyButton, removeButton);
+    row.append(orderActions, preview, titleInput, colorInput, fileInput, showTitleLabel, scaleInput, offsetInput, copyButton, removeButton);
     gamesList.append(row);
   });
 }
@@ -296,6 +311,7 @@ async function addGame(event) {
     title,
     color,
     icon: icon || makeDefaultIcon(title.slice(0, 3), color),
+    offsetY: clampOffset(gameOffsetY.value),
     scale: clampScale(gameScale.value),
     showTitle: gameShowTitle.checked
   });
@@ -303,6 +319,7 @@ async function addGame(event) {
   gameForm.reset();
   gameColor.value = DEFAULT_COLORS[state.games.length % DEFAULT_COLORS.length];
   gameScale.value = "100";
+  gameOffsetY.value = "0";
   renderAdmin();
   markDirty();
 }
@@ -384,6 +401,16 @@ function clampScale(value) {
   }
 
   return Math.min(200, Math.max(25, Math.round(number)));
+}
+
+function clampOffset(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(-100, Math.round(number)));
 }
 
 function markDirty() {
