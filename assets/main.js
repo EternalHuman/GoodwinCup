@@ -8,6 +8,7 @@ import {
 
 const AUTO_REFRESH_INTERVAL = 1000;
 const AUTO_SAVE_DELAY = 700;
+const SORT_APPLY_DELAY = 10000;
 const STATUS_HIDE_DELAY = 4000;
 
 const tableRoot = document.querySelector("#table-root");
@@ -24,9 +25,12 @@ let layoutSignature = "";
 let hasUnsavedChanges = false;
 let statusHideTimer = 0;
 let autoSaveTimer = 0;
+let sortApplyTimer = 0;
+let sortingPausedUntil = 0;
 let isSaveInFlight = false;
 let saveAgainAfterCurrent = false;
 let refreshInFlight = false;
+let visiblePlayerOrder = [];
 const dirtyScoreKeys = new Set();
 
 init();
@@ -137,6 +141,8 @@ function renderBoard() {
   tableRoot.replaceChildren();
 
   if (!state.players.length || !state.games.length) {
+    visiblePlayerOrder = [];
+
     const empty = document.createElement("div");
     empty.className = "empty-state";
 
@@ -155,7 +161,8 @@ function renderBoard() {
   board.className = "scoreboard-grid";
   board.style.setProperty("--game-count", state.games.length);
   board.style.setProperty("--player-count", state.players.length);
-  const sortedPlayers = getPlayersSortedByTotal(state);
+  const visiblePlayers = getVisiblePlayers(state);
+  visiblePlayerOrder = visiblePlayers.map((player) => player.id);
 
   const gamesStrip = document.createElement("div");
   gamesStrip.className = "games-strip";
@@ -172,8 +179,8 @@ function renderBoard() {
   playerLabels.className = "player-labels";
   playerLabels.setAttribute("aria-label", "Игроки");
 
-  sortedPlayers.forEach((player, playerIndex) => {
-    playerLabels.append(createPlayerLabel(player, playerIndex === sortedPlayers.length - 1));
+  visiblePlayers.forEach((player, playerIndex) => {
+    playerLabels.append(createPlayerLabel(player, playerIndex === visiblePlayers.length - 1));
   });
 
   const scoreGrid = document.createElement("div");
@@ -181,8 +188,8 @@ function renderBoard() {
   scoreGrid.setAttribute("role", "table");
   scoreGrid.setAttribute("aria-label", "Очки по играм");
 
-  sortedPlayers.forEach((player, playerIndex) => {
-    const isLastRow = playerIndex === sortedPlayers.length - 1;
+  visiblePlayers.forEach((player, playerIndex) => {
+    const isLastRow = playerIndex === visiblePlayers.length - 1;
 
     for (const game of state.games) {
       scoreGrid.append(createScoreCell(player, game, { isLastRow }));
@@ -307,6 +314,7 @@ function updateScore(playerId, gameId, rawValue) {
 function markDirty(playerId, gameId) {
   dirtyScoreKeys.add(createScoreKey(playerId, gameId));
   hasUnsavedChanges = true;
+  scheduleSortApply();
   scheduleAutoSave();
   updateSaveButton();
 }
@@ -367,6 +375,27 @@ async function persistState(options = {}) {
 function scheduleAutoSave() {
   window.clearTimeout(autoSaveTimer);
   autoSaveTimer = window.setTimeout(() => persistState({ silent: true }), AUTO_SAVE_DELAY);
+}
+
+function scheduleSortApply() {
+  sortingPausedUntil = Date.now() + SORT_APPLY_DELAY;
+  window.clearTimeout(sortApplyTimer);
+  sortApplyTimer = window.setTimeout(applyDeferredSorting, SORT_APPLY_DELAY);
+}
+
+function applyDeferredSorting() {
+  sortingPausedUntil = 0;
+
+  if (!state) {
+    return;
+  }
+
+  const nextLayoutSignature = getLayoutSignature(state);
+
+  if (nextLayoutSignature !== layoutSignature) {
+    layoutSignature = nextLayoutSignature;
+    renderBoard();
+  }
 }
 
 function buildDirtyScorePatch() {
@@ -456,6 +485,32 @@ function getPlayersSortedByTotal(nextState) {
     .map(({ player }) => player);
 }
 
+function getVisiblePlayers(nextState) {
+  const sortedPlayers = getPlayersSortedByTotal(nextState);
+
+  if (!isSortingPaused() || !visiblePlayerOrder.length) {
+    return sortedPlayers;
+  }
+
+  const playersById = new Map(nextState.players.map((player) => [player.id, player]));
+  const orderedPlayers = visiblePlayerOrder
+    .map((playerId) => playersById.get(playerId))
+    .filter(Boolean);
+  const orderedIds = new Set(orderedPlayers.map((player) => player.id));
+
+  for (const player of sortedPlayers) {
+    if (!orderedIds.has(player.id)) {
+      orderedPlayers.push(player);
+    }
+  }
+
+  return orderedPlayers;
+}
+
+function isSortingPaused() {
+  return sortingPausedUntil > Date.now();
+}
+
 function mergeDirtyScores(nextState) {
   if (!state || !dirtyScoreKeys.size) {
     return nextState;
@@ -489,7 +544,7 @@ function getLayoutSignature(nextState) {
   return JSON.stringify({
     players: nextState.players,
     games: nextState.games,
-    playerOrder: getPlayersSortedByTotal(nextState).map((player) => player.id)
+    playerOrder: getVisiblePlayers(nextState).map((player) => player.id)
   });
 }
 
