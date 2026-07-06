@@ -81,15 +81,15 @@ export async function loadState() {
   const localState = readLocalState();
 
   try {
-    const response = await fetch(API_ENDPOINT, {
+    const response = await fetch(createApiUrl(), {
       cache: "no-store",
-      headers: { "Accept": "application/json" }
+      headers: noCacheHeaders()
     });
 
     if (response.ok) {
-      const remoteState = normalizeState(await response.json());
+      const remoteState = normalizeState(readResponseState(await response.json()));
       writeLocalState(remoteState);
-      return { state: remoteState, mode: "cloud" };
+      return createRemoteResult(remoteState, response);
     }
   } catch (error) {
     console.debug("Cloudflare state is unavailable, using local storage.", error);
@@ -97,7 +97,7 @@ export async function loadState() {
 
   const fallbackState = localState || createDefaultState();
   writeLocalState(fallbackState);
-  return { state: fallbackState, mode: "local" };
+  return createLocalResult(fallbackState);
 }
 
 export async function saveState(nextState) {
@@ -108,22 +108,93 @@ export async function saveState(nextState) {
     const response = await fetch(API_ENDPOINT, {
       method: "PUT",
       headers: {
-        "Accept": "application/json",
+        ...noCacheHeaders(),
         "Content-Type": "application/json"
       },
       body: JSON.stringify(state)
     });
 
     if (response.ok) {
-      const remoteState = normalizeState(await response.json());
+      const remoteState = normalizeState(readResponseState(await response.json()));
       writeLocalState(remoteState);
-      return { state: remoteState, mode: "cloud" };
+      return createRemoteResult(remoteState, response);
     }
   } catch (error) {
     console.debug("Cloudflare save is unavailable, using local storage.", error);
   }
 
-  return { state, mode: "local" };
+  return createLocalResult(state);
+}
+
+export async function saveScorePatch(scoresPatch, nextState) {
+  const state = normalizeState(nextState || readLocalState() || createDefaultState());
+  writeLocalState(state);
+
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: "PATCH",
+      headers: {
+        ...noCacheHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ scores: scoresPatch })
+    });
+
+    if (response.ok) {
+      const remoteState = normalizeState(readResponseState(await response.json()));
+      writeLocalState(remoteState);
+      return createRemoteResult(remoteState, response);
+    }
+  } catch (error) {
+    console.debug("Cloudflare patch save is unavailable, using local storage.", error);
+  }
+
+  return createLocalResult(state);
+}
+
+function createApiUrl() {
+  return `${API_ENDPOINT}?_=${Date.now()}`;
+}
+
+function noCacheHeaders() {
+  return {
+    "Accept": "application/json",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache"
+  };
+}
+
+function readResponseState(payload) {
+  if (payload && typeof payload === "object" && payload.state) {
+    return payload.state;
+  }
+
+  return payload;
+}
+
+function createRemoteResult(state, response) {
+  return {
+    state,
+    mode: "cloud",
+    revision: readRevision(response),
+    storage: response.headers.get("X-Goodwin-Storage") || "cloud",
+    updatedAt: response.headers.get("X-Goodwin-Updated-At") || ""
+  };
+}
+
+function createLocalResult(state) {
+  return {
+    state,
+    mode: "local",
+    revision: 0,
+    storage: "local",
+    updatedAt: ""
+  };
+}
+
+function readRevision(response) {
+  const revision = Number(response.headers.get("X-Goodwin-Revision"));
+  return Number.isFinite(revision) && revision > 0 ? Math.floor(revision) : 0;
 }
 
 export function createId(prefix) {

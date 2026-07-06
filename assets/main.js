@@ -3,10 +3,11 @@ import {
   calculatePlayerTotal,
   formatScore,
   loadState,
-  saveState
+  saveScorePatch
 } from "./store.js";
 
 const AUTO_REFRESH_INTERVAL = 1000;
+const AUTO_SAVE_DELAY = 700;
 const STATUS_HIDE_DELAY = 4000;
 
 const tableRoot = document.querySelector("#table-root");
@@ -17,10 +18,15 @@ const saveButton = document.querySelector("#save-button");
 
 let state = null;
 let currentMode = "local";
+let latestRevision = 0;
 let stateSignature = "";
 let layoutSignature = "";
 let hasUnsavedChanges = false;
 let statusHideTimer = 0;
+let autoSaveTimer = 0;
+let isSaveInFlight = false;
+let saveAgainAfterCurrent = false;
+let refreshInFlight = false;
 const dirtyScoreKeys = new Set();
 
 init();
@@ -32,6 +38,7 @@ async function init() {
   saveButton.addEventListener("click", persistState);
   window.addEventListener("storage", handleStorageUpdate);
   window.addEventListener("beforeunload", warnAboutUnsavedChanges);
+  document.addEventListener("visibilitychange", refreshVisibleBoard);
   window.setInterval(refreshVisibleBoard, AUTO_REFRESH_INTERVAL);
 }
 
@@ -63,12 +70,20 @@ async function refreshState() {
 }
 
 async function refreshVisibleBoard() {
-  if (document.visibilityState !== "visible") {
+  if (document.visibilityState !== "visible" || refreshInFlight) {
     return;
   }
 
-  const result = await loadState();
-  applyLoadedState(result);
+  refreshInFlight = true;
+
+  try {
+    const result = await loadState();
+    applyLoadedState(result);
+  } catch (error) {
+    console.debug("Could not refresh tournament state.", error);
+  } finally {
+    refreshInFlight = false;
+  }
 }
 
 function handleStorageUpdate(event) {
@@ -90,6 +105,13 @@ function warnAboutUnsavedChanges(event) {
 
 function applyLoadedState(result, options = {}) {
   const { forceRender = false } = options;
+
+  if (isStaleResult(result)) {
+    return;
+  }
+
+  latestRevision = Math.max(latestRevision, result.revision || 0);
+
   const nextState = hasUnsavedChanges ? mergeDirtyScores(result.state) : result.state;
   const nextSignature = JSON.stringify(nextState);
   const nextLayoutSignature = getLayoutSignature(nextState);
@@ -133,6 +155,7 @@ function renderBoard() {
   board.className = "scoreboard-grid";
   board.style.setProperty("--game-count", state.games.length);
   board.style.setProperty("--player-count", state.players.length);
+  const sortedPlayers = getPlayersSortedByTotal(state);
 
   const gamesStrip = document.createElement("div");
   gamesStrip.className = "games-strip";
@@ -149,8 +172,8 @@ function renderBoard() {
   playerLabels.className = "player-labels";
   playerLabels.setAttribute("aria-label", "Игроки");
 
-  state.players.forEach((player, playerIndex) => {
-    playerLabels.append(createPlayerLabel(player, playerIndex === state.players.length - 1));
+  sortedPlayers.forEach((player, playerIndex) => {
+    playerLabels.append(createPlayerLabel(player, playerIndex === sortedPlayers.length - 1));
   });
 
   const scoreGrid = document.createElement("div");
@@ -158,8 +181,8 @@ function renderBoard() {
   scoreGrid.setAttribute("role", "table");
   scoreGrid.setAttribute("aria-label", "Очки по играм");
 
-  state.players.forEach((player, playerIndex) => {
-    const isLastRow = playerIndex === state.players.length - 1;
+  sortedPlayers.forEach((player, playerIndex) => {
+    const isLastRow = playerIndex === sortedPlayers.length - 1;
 
     for (const game of state.games) {
       scoreGrid.append(createScoreCell(player, game, { isLastRow }));
@@ -284,29 +307,106 @@ function updateScore(playerId, gameId, rawValue) {
 function markDirty(playerId, gameId) {
   dirtyScoreKeys.add(createScoreKey(playerId, gameId));
   hasUnsavedChanges = true;
+  scheduleAutoSave();
   updateSaveButton();
 }
 
-async function persistState() {
-  if (!state) {
+async function persistState(options = {}) {
+  const { silent = false } = options;
+
+  window.clearTimeout(autoSaveTimer);
+
+  if (!state || !dirtyScoreKeys.size) {
     return;
   }
 
-  setStatus("Сохранение", "info", { autoHide: false });
+  if (isSaveInFlight) {
+    saveAgainAfterCurrent = true;
+    return;
+  }
+
+  if (!silent) {
+    setStatus("Сохранение", "info", { autoHide: false });
+  }
+
   saveButton.disabled = true;
+  isSaveInFlight = true;
+
+  const { patch, savedValues } = buildDirtyScorePatch();
+
+  if (!savedValues.size) {
+    isSaveInFlight = false;
+    hasUnsavedChanges = dirtyScoreKeys.size > 0;
+    updateSaveButton();
+    return;
+  }
 
   try {
-    const latest = await loadState();
-    const stateToSave = hasUnsavedChanges ? mergeDirtyScores(latest.state) : state;
-    const result = await saveState(stateToSave);
-    dirtyScoreKeys.clear();
-    hasUnsavedChanges = false;
-    applyLoadedState(result, { forceRender: true });
-    setStatus(statusReadyText(), currentMode === "cloud" ? "success" : "warning");
+    const result = await saveScorePatch(patch, state);
+    removeSavedDirtyKeys(savedValues);
+    hasUnsavedChanges = dirtyScoreKeys.size > 0;
+    applyLoadedState(result);
+
+    if (!silent) {
+      setStatus(statusReadyText(), currentMode === "cloud" ? "success" : "warning");
+    }
   } catch (error) {
     console.error("Could not save tournament state.", error);
     setStatus("Ошибка сохранения", "error");
+  } finally {
+    isSaveInFlight = false;
     updateSaveButton();
+
+    if (saveAgainAfterCurrent || dirtyScoreKeys.size) {
+      saveAgainAfterCurrent = false;
+      scheduleAutoSave();
+    }
+  }
+}
+
+function scheduleAutoSave() {
+  window.clearTimeout(autoSaveTimer);
+  autoSaveTimer = window.setTimeout(() => persistState({ silent: true }), AUTO_SAVE_DELAY);
+}
+
+function buildDirtyScorePatch() {
+  const patch = {};
+  const savedValues = new Map();
+  const playerIds = new Set(state.players.map((player) => player.id));
+  const gameIds = new Set(state.games.map((game) => game.id));
+
+  for (const key of dirtyScoreKeys) {
+    const { playerId, gameId } = parseScoreKey(key);
+
+    if (!playerIds.has(playerId) || !gameIds.has(gameId)) {
+      dirtyScoreKeys.delete(key);
+      continue;
+    }
+
+    const value = getCurrentScorePatchValue(playerId, gameId);
+    patch[playerId] ||= {};
+    patch[playerId][gameId] = value;
+    savedValues.set(key, value);
+  }
+
+  return { patch, savedValues };
+}
+
+function getCurrentScorePatchValue(playerId, gameId) {
+  if (Object.prototype.hasOwnProperty.call(state.scores[playerId] || {}, gameId)) {
+    return state.scores[playerId][gameId];
+  }
+
+  return null;
+}
+
+function removeSavedDirtyKeys(savedValues) {
+  for (const [key, savedValue] of savedValues) {
+    const { playerId, gameId } = parseScoreKey(key);
+
+    if (getCurrentScorePatchValue(playerId, gameId) === savedValue) {
+      dirtyScoreKeys.delete(key);
+    }
   }
 }
 
@@ -336,6 +436,24 @@ function updateAllTotals() {
   for (const player of state.players) {
     updatePlayerTotal(player.id);
   }
+}
+
+function isStaleResult(result) {
+  return result?.mode === "cloud"
+    && result.revision > 0
+    && latestRevision > 0
+    && result.revision < latestRevision;
+}
+
+function getPlayersSortedByTotal(nextState) {
+  return nextState.players
+    .map((player, index) => ({
+      player,
+      index,
+      total: calculatePlayerTotal(nextState, player.id)
+    }))
+    .sort((left, right) => right.total - left.total || left.index - right.index)
+    .map(({ player }) => player);
 }
 
 function mergeDirtyScores(nextState) {
@@ -370,7 +488,8 @@ function mergeDirtyScores(nextState) {
 function getLayoutSignature(nextState) {
   return JSON.stringify({
     players: nextState.players,
-    games: nextState.games
+    games: nextState.games,
+    playerOrder: getPlayersSortedByTotal(nextState).map((player) => player.id)
   });
 }
 
@@ -394,7 +513,7 @@ function updateModeLabel() {
 }
 
 function updateSaveButton() {
-  saveButton.disabled = !hasUnsavedChanges;
+  saveButton.disabled = !hasUnsavedChanges || isSaveInFlight;
   saveButton.classList.toggle("has-unsaved", hasUnsavedChanges);
 }
 

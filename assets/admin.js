@@ -440,7 +440,8 @@ async function persistState() {
   saveButton.disabled = true;
 
   try {
-    const result = await saveState(state);
+    const latest = await loadState();
+    const result = await saveState(mergeLatestScores(latest.state));
     state = result.state;
     currentMode = result.mode;
     hasUnsavedChanges = false;
@@ -452,6 +453,21 @@ async function persistState() {
     setStatus("Ошибка сохранения", "error");
     updateSaveButton();
   }
+}
+
+function mergeLatestScores(latestState) {
+  const scores = {};
+
+  for (const player of state.players) {
+    scores[player.id] = latestState.scores[player.id]
+      ? { ...latestState.scores[player.id] }
+      : { ...(state.scores[player.id] || {}) };
+  }
+
+  return {
+    ...state,
+    scores
+  };
 }
 
 function checkIconSize(file) {

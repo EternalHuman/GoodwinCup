@@ -6,3 +6,10 @@ pages_build_output_dir = "."
 [[kv_namespaces]]
 binding = "GOODWIN_CUP_KV"
 id = "4f6903ba9177482c927be22f50b8c857"
+
+# For faster cross-user sync, prefer an R2 bucket binding named GOODWIN_CUP_R2.
+# R2 reads through Worker bindings are strongly consistent globally, unlike KV edge cache.
+# Create the bucket, then uncomment:
+[[r2_buckets]]
+binding = "GOODWIN_CUP_R2"
+bucket_name = "goodwin-cup-state"

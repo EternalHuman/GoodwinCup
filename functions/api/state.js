@@ -1,4 +1,7 @@
 const STATE_KEY = "goodwin-cup-state";
+const R2_STATE_KEY = `${STATE_KEY}.json`;
+const STORAGE_KV = "kv";
+const STORAGE_R2 = "r2";
 
 const DEFAULT_COLORS = [
   "#d7083a",
@@ -32,17 +35,17 @@ const DEFAULT_STATE = {
 };
 
 export async function onRequestGet({ env }) {
-  if (!env.GOODWIN_CUP_KV) {
-    return json({ error: "GOODWIN_CUP_KV binding is not configured." }, 501);
+  if (!hasStorage(env)) {
+    return missingStorageResponse();
   }
 
-  const storedState = await env.GOODWIN_CUP_KV.get(STATE_KEY, "json");
-  return json(normalizeState(storedState || DEFAULT_STATE));
+  const record = await readStoredState(env);
+  return json(record.state, 200, record);
 }
 
 export async function onRequestPut({ request, env }) {
-  if (!env.GOODWIN_CUP_KV) {
-    return json({ error: "GOODWIN_CUP_KV binding is not configured." }, 501);
+  if (!hasStorage(env)) {
+    return missingStorageResponse();
   }
 
   let payload;
@@ -53,14 +56,179 @@ export async function onRequestPut({ request, env }) {
     return json({ error: "Invalid JSON." }, 400);
   }
 
-  const state = normalizeState(payload);
-  await env.GOODWIN_CUP_KV.put(STATE_KEY, JSON.stringify(state));
+  const current = await readStoredState(env);
+  const state = normalizeState(readPayloadState(payload));
+  const record = await writeStoredState(env, state, current);
 
-  return json(state);
+  return json(record.state, 200, record);
+}
+
+export async function onRequestPatch({ request, env }) {
+  if (!hasStorage(env)) {
+    return missingStorageResponse();
+  }
+
+  let payload;
+
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON." }, 400);
+  }
+
+  const current = await readStoredState(env);
+  const state = normalizeState(current.state);
+  applyScorePatch(state, payload?.scores);
+  const record = await writeStoredState(env, state, current);
+
+  return json(record.state, 200, record);
 }
 
 export async function onRequestPost(context) {
   return onRequestPut(context);
+}
+
+function hasStorage(env) {
+  return Boolean(env.GOODWIN_CUP_R2 || env.GOODWIN_CUP_KV);
+}
+
+function missingStorageResponse() {
+  return json({ error: "Configure GOODWIN_CUP_R2 or GOODWIN_CUP_KV binding." }, 501);
+}
+
+async function readStoredState(env) {
+  if (env.GOODWIN_CUP_R2) {
+    const r2Record = await readR2State(env.GOODWIN_CUP_R2);
+
+    if (r2Record) {
+      return r2Record;
+    }
+
+    const fallbackRecord = env.GOODWIN_CUP_KV
+      ? await readKvState(env.GOODWIN_CUP_KV)
+      : createRecord(DEFAULT_STATE, STORAGE_R2);
+
+    return writeR2State(env.GOODWIN_CUP_R2, fallbackRecord.state, fallbackRecord);
+  }
+
+  return readKvState(env.GOODWIN_CUP_KV);
+}
+
+async function readR2State(bucket) {
+  const object = await bucket.get(R2_STATE_KEY);
+
+  if (!object) {
+    return null;
+  }
+
+  return normalizeStoredRecord(await object.json(), STORAGE_R2);
+}
+
+async function readKvState(kv) {
+  const storedState = await kv.get(STATE_KEY, "json");
+  return normalizeStoredRecord(storedState, STORAGE_KV);
+}
+
+async function writeStoredState(env, state, previousRecord) {
+  if (env.GOODWIN_CUP_R2) {
+    return writeR2State(env.GOODWIN_CUP_R2, state, previousRecord);
+  }
+
+  return writeKvState(env.GOODWIN_CUP_KV, state, previousRecord);
+}
+
+async function writeR2State(bucket, state, previousRecord) {
+  const record = createRecord(state, STORAGE_R2, nextRevision(previousRecord), new Date().toISOString());
+
+  await bucket.put(R2_STATE_KEY, JSON.stringify(toStoredRecord(record)), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" }
+  });
+
+  return record;
+}
+
+async function writeKvState(kv, state, previousRecord) {
+  const record = createRecord(state, STORAGE_KV, nextRevision(previousRecord), new Date().toISOString());
+
+  await kv.put(STATE_KEY, JSON.stringify(toStoredRecord(record)));
+
+  return record;
+}
+
+function normalizeStoredRecord(value, storage) {
+  if (value && typeof value === "object" && value.state) {
+    return createRecord(value.state, storage, cleanRevision(value.revision), cleanText(value.updatedAt, 64));
+  }
+
+  return createRecord(value || DEFAULT_STATE, storage);
+}
+
+function toStoredRecord(record) {
+  return {
+    revision: record.revision,
+    updatedAt: record.updatedAt,
+    state: record.state
+  };
+}
+
+function createRecord(state, storage, revision = 0, updatedAt = "") {
+  return {
+    state: normalizeState(state),
+    storage,
+    revision: cleanRevision(revision),
+    updatedAt: cleanText(updatedAt, 64)
+  };
+}
+
+function nextRevision(previousRecord) {
+  return Math.max(Date.now(), cleanRevision(previousRecord?.revision) + 1);
+}
+
+function cleanRevision(value) {
+  const revision = Number(value);
+  return Number.isFinite(revision) && revision > 0 ? Math.floor(revision) : 0;
+}
+
+function readPayloadState(payload) {
+  if (payload && typeof payload === "object" && payload.state && !Array.isArray(payload.players) && !Array.isArray(payload.games)) {
+    return payload.state;
+  }
+
+  return payload;
+}
+
+function applyScorePatch(state, scoresPatch) {
+  if (!scoresPatch || typeof scoresPatch !== "object") {
+    return;
+  }
+
+  const playerIds = new Set(state.players.map((player) => player.id));
+  const gameIds = new Set(state.games.map((game) => game.id));
+
+  for (const [playerId, gameScores] of Object.entries(scoresPatch)) {
+    if (!playerIds.has(playerId) || !gameScores || typeof gameScores !== "object") {
+      continue;
+    }
+
+    for (const [gameId, score] of Object.entries(gameScores)) {
+      if (!gameIds.has(gameId)) {
+        continue;
+      }
+
+      state.scores[playerId] ||= {};
+
+      if (score === null || score === "") {
+        delete state.scores[playerId][gameId];
+        continue;
+      }
+
+      const number = Number(score);
+
+      if (Number.isFinite(number)) {
+        state.scores[playerId][gameId] = number;
+      }
+    }
+  }
 }
 
 function normalizeState(input) {
@@ -209,12 +377,20 @@ function makeDefaultIcon(label, color) {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-function json(data, status = 200) {
+function json(data, status = 200, record = null) {
+  const headers = {
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    "Content-Type": "application/json; charset=utf-8"
+  };
+
+  if (record) {
+    headers["X-Goodwin-Revision"] = String(record.revision || 0);
+    headers["X-Goodwin-Storage"] = record.storage || "";
+    headers["X-Goodwin-Updated-At"] = record.updatedAt || "";
+  }
+
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      "Cache-Control": "no-store",
-      "Content-Type": "application/json; charset=utf-8"
-    }
+    headers
   });
 }
