@@ -19,6 +19,11 @@
           </span>
         </a>
         <div class="topbar-actions">
+          <label class="scale-control" for="table-scale">
+            <span class="scale-control-label">Scale</span>
+            <input id="table-scale" class="scale-slider" type="range" min="60" max="160" step="5" value="100">
+            <output id="table-scale-value" class="scale-value" for="table-scale">100%</output>
+          </label>
           <button id="refresh-button" class="ghost-button" type="button">Обновить</button>
           <button id="save-button" class="solid-button" type="button">Сохранить</button>
         </div>
