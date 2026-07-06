@@ -25,19 +25,9 @@
   --player-cell-alpha: .002;
   --total-cell-alpha: .006;
   --table-scale: 1;
-  --score-cell-size-base: clamp(72px, 7.8vw, 104px);
-  --total-cell-width-base: clamp(92px, 9vw, 132px);
-  --player-label-width-base: clamp(160px, 20vw, 260px);
-  --player-label-font-size-base: clamp(24px, 3vw, 42px);
-  --score-number-font-size-base: clamp(33px, 4.5vw, 51px);
-  --game-title-font-size-base: clamp(12px, 1.5vw, 18px);
-  --score-cell-size: var(--score-cell-size-scaled, var(--score-cell-size-base));
-  --total-cell-width: var(--total-cell-width-scaled, var(--total-cell-width-base));
-  --player-label-width: var(--player-label-width-scaled, var(--player-label-width-base));
-  --player-label-font-size: var(--player-label-font-size-scaled, var(--player-label-font-size-base));
-  --score-number-font-size: var(--score-number-font-size-scaled, var(--score-number-font-size-base));
-  --game-title-font-size: var(--game-title-font-size-scaled, var(--game-title-font-size-base));
-  --scoreboard-shadow-height: var(--scoreboard-shadow-height-scaled, 64px);
+  --score-cell-size: clamp(72px, 7.8vw, 104px);
+  --total-cell-width: clamp(92px, 9vw, 132px);
+  --player-label-width: clamp(160px, 20vw, 260px);
   --table-text-shadow: 4px 5px 0 rgba(0, 0, 0, .7), 7px 9px 18px rgba(0, 0, 0, .76);
   --number-text-shadow: 3px 4px 0 rgba(0, 0, 0, .62), 4px 5px 9px rgba(0, 0, 0, .58);
   --text-outline: rgba(0, 0, 0, .82);
@@ -384,7 +374,9 @@ h1 {
   isolation: isolate;
   width: max-content;
   margin: 0 auto;
-  padding-bottom: var(--scoreboard-shadow-height);
+  padding-bottom: 64px;
+  transform-origin: top center;
+  zoom: var(--table-scale);
 }
 
 .scoreboard-grid::after {
@@ -393,7 +385,7 @@ h1 {
   right: 0;
   bottom: 0;
   left: 0;
-  height: var(--scoreboard-shadow-height);
+  height: 64px;
   background:
     radial-gradient(ellipse 34% 62% at 50% 0%, rgba(255, 255, 255, .62) 0%, rgba(255, 255, 255, .32) 30%, rgba(255, 255, 255, .1) 55%, rgba(255, 255, 255, 0) 76%),
     radial-gradient(ellipse 72% 78% at 50% 4%, rgba(255, 255, 255, .24) 0%, rgba(255, 255, 255, .09) 46%, rgba(255, 255, 255, 0) 78%);
@@ -464,7 +456,7 @@ h1 {
   max-width: 100%;
   overflow: hidden;
   color: #fff;
-  font-size: var(--game-title-font-size);
+  font-size: clamp(12px, 1.5vw, 18px);
   line-height: 1;
   text-align: center;
   -webkit-text-stroke: 0;
@@ -508,7 +500,7 @@ h1 {
   border-bottom: var(--grid-line-size) solid var(--line);
   background: rgba(255, 255, 255, var(--player-cell-alpha));
   color: var(--text);
-  font-size: var(--player-label-font-size);
+  font-size: clamp(24px, 3vw, 42px);
   line-height: 1.02;
   overflow-wrap: anywhere;
   text-align: center;
@@ -566,7 +558,7 @@ h1 {
   border-right: 0;
   color: #fff;
   background: rgba(255, 255, 255, var(--total-cell-alpha));
-  font-size: var(--score-number-font-size);
+  font-size: clamp(33px, 4.5vw, 51px);
   font-weight: 700;
   text-align: center;
   -webkit-text-stroke: 1px var(--text-outline);
@@ -591,7 +583,7 @@ h1 {
   border-radius: var(--radius);
   color: #fff;
   background: rgba(0, 0, 0, .14);
-  font-size: var(--score-number-font-size);
+  font-size: clamp(33px, 4.5vw, 51px);
   font-weight: 700;
   text-align: center;
   -webkit-text-stroke: 1px var(--text-outline);
@@ -843,9 +835,9 @@ h1 {
 
 @media (max-width: 980px) {
   :root {
-    --score-cell-size-base: 78px;
-    --total-cell-width-base: 104px;
-    --player-label-width-base: 180px;
+    --score-cell-size: 78px;
+    --total-cell-width: 104px;
+    --player-label-width: 180px;
   }
 
   .app-shell {
@@ -891,9 +883,9 @@ h1 {
 
 @media (max-width: 640px) {
   :root {
-    --score-cell-size-base: 68px;
-    --total-cell-width-base: 94px;
-    --player-label-width-base: 150px;
+    --score-cell-size: 68px;
+    --total-cell-width: 94px;
+    --player-label-width: 150px;
   }
 
   .app-shell {
